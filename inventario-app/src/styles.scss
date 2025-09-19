@@ -168,6 +168,43 @@ body {
   color: white !important;
 }
 
+/* Fix Material Design purple overlay */
+.mat-mdc-option {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+}
+
+.mat-mdc-option:hover {
+  background: var(--coffee-cream) !important;
+}
+
+.mat-mdc-option.mdc-list-item--selected {
+  background: var(--coffee-light) !important;
+  color: var(--text-primary) !important;
+}
+
+.mat-mdc-select-panel {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-medium) !important;
+}
+
+.mat-mdc-menu-panel {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-medium) !important;
+}
+
+.mat-mdc-menu-item {
+  color: var(--text-primary) !important;
+}
+
+.mat-mdc-menu-item:hover {
+  background: var(--coffee-cream) !important;
+}
+
 /* Utility classes */
 .text-center {
   text-align: center;

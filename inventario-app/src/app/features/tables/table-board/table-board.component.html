@@ -1,0 +1,251 @@
+<div class="table-board-container">
+  <!-- Header del Tablero -->
+  <div class="board-header">
+    <div class="header-content">
+      <div class="title-section">
+        <button mat-icon-button (click)="goBack()" class="back-button">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <div class="title-info">
+          <h1 class="board-title">
+            <mat-icon>dashboard</mat-icon>
+            {{ zone?.name || 'Tablero de Mesas' }}
+          </h1>
+          <p class="board-subtitle">{{ zone?.description || 'Organiza las mesas de tu zona' }}</p>
+        </div>
+      </div>
+      
+      <div class="board-stats">
+        <div class="stat-item">
+          <mat-icon>table_restaurant</mat-icon>
+          <span>{{ tables.length }} mesas</span>
+        </div>
+        <div class="stat-item">
+          <mat-icon>people</mat-icon>
+          <span>{{ zone?.capacity || 0 }} personas</span>
+        </div>
+        <div class="stat-item available">
+          <mat-icon>check_circle</mat-icon>
+          <span>{{ getTableCountByStatus('available') }} disponibles</span>
+        </div>
+        <div class="stat-item occupied">
+          <mat-icon>restaurant</mat-icon>
+          <span>{{ getTableCountByStatus('occupied') }} ocupadas</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="board-actions">
+      <button mat-stroked-button 
+              (click)="toggleEditMode()" 
+              [class]="isEditMode ? 'edit-active' : 'edit-inactive'"
+              class="edit-button">
+        <mat-icon>{{ isEditMode ? 'save' : 'edit' }}</mat-icon>
+        {{ isEditMode ? 'Guardar Layout' : 'Editar Tablero' }}
+      </button>
+      
+      <button mat-raised-button 
+              (click)="addTable()" 
+              class="add-button">
+        <mat-icon>add</mat-icon>
+        Nueva Mesa
+      </button>
+      
+      <button mat-icon-button 
+              (click)="toggleGrid()" 
+              [matTooltip]="showGrid ? 'Ocultar Cuadrícula' : 'Mostrar Cuadrícula'"
+              class="grid-button">
+        <mat-icon>grid_on</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Controles del Tablero -->
+  <div class="board-controls" *ngIf="isEditMode">
+    <mat-card class="controls-card">
+      <mat-card-content>
+        <div class="controls-row">
+          <div class="control-group">
+            <label>Tamaño de Mesa:</label>
+            <mat-slider 
+              min="40" 
+              max="120" 
+              step="10" 
+              [(ngModel)]="tableSize" 
+              (ngModelChange)="updateTableSize()"
+              class="size-slider">
+            </mat-slider>
+            <span class="size-value">{{ tableSize }}px</span>
+          </div>
+          
+          <div class="control-group">
+            <label>Snap to Grid:</label>
+            <mat-slide-toggle 
+              [(ngModel)]="snapToGrid"
+              class="snap-toggle">
+            </mat-slide-toggle>
+          </div>
+          
+          <div class="control-group">
+            <label>Zoom:</label>
+            <mat-slider 
+              min="50" 
+              max="200" 
+              step="10" 
+              [(ngModel)]="zoomLevel" 
+              (ngModelChange)="updateZoom()"
+              class="zoom-slider">
+            </mat-slider>
+            <span class="zoom-value">{{ zoomLevel }}%</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Tablero Visual -->
+  <div class="board-workspace">
+    <div class="board-canvas" 
+         [style.transform]="'scale(' + (zoomLevel / 100) + ')'"
+         [class.edit-mode]="isEditMode"
+         [class.grid-visible]="showGrid">
+      
+      <!-- Cuadrícula de fondo -->
+      <div class="grid-background" 
+           *ngIf="showGrid"
+           [style.background-size]="gridSize + 'px ' + gridSize + 'px'">
+      </div>
+      
+      <!-- Mesas Arrastrables -->
+      <div class="tables-container"
+           cdkDropList
+           [cdkDropListData]="tables"
+           [cdkDropListDisabled]="!isEditMode"
+           (cdkDropListDropped)="onTableMoved($event)">
+        
+        <div class="table-item"
+             *ngFor="let table of tables; trackBy: trackByTableId"
+             cdkDrag
+             [cdkDragDisabled]="!isEditMode"
+             [style.left.px]="table.position.x || 0"
+             [style.top.px]="table.position.y || 0"
+             [style.width.px]="tableSize"
+             [style.height.px]="tableSize"
+             [class]="'table-' + table.status"
+             [class.dragging]="isEditMode"
+             (click)="openTableDetails(table)"
+             (dblclick)="openTableDetails(table)">
+          
+          <!-- Mesa -->
+          <div class="table-shape" [class]="'shape-' + table.shape">
+            <div class="table-number">{{ table.number }}</div>
+            <div class="table-capacity">{{ table.capacity }}</div>
+          </div>
+          
+          <!-- Estado de la mesa -->
+          <div class="table-status" [class]="'status-' + table.status">
+            <mat-icon>{{ getStatusIcon(table.status) }}</mat-icon>
+          </div>
+          
+          <!-- Indicador de arrastre -->
+          <div class="drag-handle" *ngIf="isEditMode">
+            <mat-icon>drag_indicator</mat-icon>
+          </div>
+          
+          <!-- Acciones rápidas -->
+          <div class="table-actions" *ngIf="isEditMode">
+            <button mat-icon-button 
+                    (click)="editTable(table)" 
+                    matTooltip="Editar Mesa"
+                    class="action-btn edit">
+              <mat-icon>edit</mat-icon>
+            </button>
+            
+            <button mat-icon-button 
+                    (click)="deleteTable(table)" 
+                    matTooltip="Eliminar Mesa"
+                    class="action-btn delete">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Zona de drop para nuevas mesas -->
+      <div class="drop-zone" 
+           *ngIf="isEditMode"
+           cdkDropList
+           [cdkDropListData]="[]"
+           (cdkDropListDropped)="onNewTableDropped($event)">
+        <div class="drop-zone-content">
+          <mat-icon>add</mat-icon>
+          <span>Arrastra aquí para crear nueva mesa</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel de propiedades de mesa seleccionada -->
+  <div class="table-properties" *ngIf="selectedTable && isEditMode">
+    <mat-card class="properties-card">
+      <mat-card-header>
+        <mat-card-title>Mesa {{ selectedTable.number }}</mat-card-title>
+        <mat-card-subtitle>{{ selectedTable.capacity }} personas</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <div class="property-group">
+          <label>Número:</label>
+          <input matInput [(ngModel)]="selectedTable.number" type="number">
+        </div>
+        
+        <div class="property-group">
+          <label>Capacidad:</label>
+          <input matInput [(ngModel)]="selectedTable.capacity" type="number">
+        </div>
+        
+        <div class="property-group">
+          <label>Estado:</label>
+          <mat-select [(ngModel)]="selectedTable.status">
+            <mat-option value="available">Disponible</mat-option>
+            <mat-option value="occupied">Ocupada</mat-option>
+            <mat-option value="reserved">Reservada</mat-option>
+            <mat-option value="maintenance">Mantenimiento</mat-option>
+          </mat-select>
+        </div>
+        
+        <div class="property-group">
+          <label>Forma:</label>
+          <mat-select [(ngModel)]="selectedTable.shape">
+            <mat-option value="round">Redonda</mat-option>
+            <mat-option value="square">Cuadrada</mat-option>
+            <mat-option value="rectangle">Rectangular</mat-option>
+          </mat-select>
+        </div>
+        
+        <div class="property-group">
+          <label>Posición X:</label>
+          <input matInput [(ngModel)]="selectedTable.position.x" type="number">
+        </div>
+        
+        <div class="property-group">
+          <label>Posición Y:</label>
+          <input matInput [(ngModel)]="selectedTable.position.y" type="number">
+        </div>
+      </mat-card-content>
+      
+      <mat-card-actions>
+        <button mat-button (click)="saveTableChanges()">Guardar</button>
+        <button mat-button (click)="cancelTableChanges()">Cancelar</button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <!-- Panel de Detalles de Mesa -->
+  <app-table-details 
+    *ngIf="selectedTable"
+    [table]="selectedTable"
+    (close)="closeTableDetails()"
+    (tableUpdated)="onTableUpdated($event)">
+  </app-table-details>
+</div>

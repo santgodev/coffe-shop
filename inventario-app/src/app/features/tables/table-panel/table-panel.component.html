@@ -11,7 +11,7 @@
       </div>
       
       <div class="stats-section">
-        <div class="stat-card" *ngFor="let stat of stats$ | async">
+        <div class="stat-card" *ngFor="let stat of (stats$ | async)">
           <div class="stat-icon" [class]="getStatIconClass(stat.key)">
             <mat-icon>{{ getStatIcon(stat.key) }}</mat-icon>
           </div>

@@ -5,3 +5,4 @@ export * from './inventory.interface';
 export * from './sale.interface';
 export * from './dashboard.interface';
 export * from './table.interface';
+export * from './zone.interface';

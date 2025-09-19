@@ -5,6 +5,8 @@ export interface Table {
   capacity: number;
   status: 'available' | 'occupied' | 'reserved' | 'maintenance';
   location: 'indoor' | 'outdoor' | 'terrace' | 'private';
+  shape: 'round' | 'square' | 'rectangle';
+  zoneId: number;
   position: {
     x: number;
     y: number;
@@ -99,4 +101,9 @@ export interface TableStats {
   totalRevenue: number;
   averageOrderValue: number;
   peakHours: string[];
+}
+
+export interface TablePosition {
+  x: number;
+  y: number;
 }

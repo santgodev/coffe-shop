@@ -5,3 +5,4 @@ export * from './inventory.service';
 export * from './sale.service';
 export * from './dashboard.service';
 export * from './table.service';
+export * from './zone.service';
