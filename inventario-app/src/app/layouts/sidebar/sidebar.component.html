@@ -1,0 +1,51 @@
+<div class="sidebar-content">
+  <!-- Logo/Brand -->
+  <div class="sidebar-header">
+    <h2 class="brand-title">
+      <mat-icon>local_cafe</mat-icon>
+      Café Manager
+    </h2>
+  </div>
+
+  <!-- Navigation Menu -->
+  <mat-nav-list class="nav-list">
+    <a mat-list-item routerLink="/tables" routerLinkActive="active">
+      <mat-icon matListItemIcon>table_restaurant</mat-icon>
+      <span matListItemTitle>Mesas</span>
+    </a>
+
+    <a mat-list-item routerLink="/dashboard" routerLinkActive="active">
+      <mat-icon matListItemIcon>dashboard</mat-icon>
+      <span matListItemTitle>Dashboard</span>
+    </a>
+
+    <a mat-list-item routerLink="/products" routerLinkActive="active">
+      <mat-icon matListItemIcon>inventory_2</mat-icon>
+      <span matListItemTitle>Productos</span>
+    </a>
+
+    <a mat-list-item routerLink="/inventory" routerLinkActive="active">
+      <mat-icon matListItemIcon>warehouse</mat-icon>
+      <span matListItemTitle>Inventario</span>
+    </a>
+
+    <a mat-list-item routerLink="/sales" routerLinkActive="active">
+      <mat-icon matListItemIcon>point_of_sale</mat-icon>
+      <span matListItemTitle>Ventas</span>
+    </a>
+
+    <a mat-list-item routerLink="/reports" routerLinkActive="active">
+      <mat-icon matListItemIcon>assessment</mat-icon>
+      <span matListItemTitle>Reportes</span>
+    </a>
+
+    <!-- Divider -->
+    <mat-divider class="sidebar-divider"></mat-divider>
+
+    <!-- Settings -->
+    <a mat-list-item routerLink="/settings" routerLinkActive="active">
+      <mat-icon matListItemIcon>settings</mat-icon>
+      <span matListItemTitle>Configuración</span>
+    </a>
+  </mat-nav-list>
+</div>

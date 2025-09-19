@@ -1,0 +1,224 @@
+/* You can add global styles to this file, and also import other style files */
+
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* Coffee Shop Theme Variables */
+:root {
+  /* Coffee Color Palette */
+  --coffee-dark: #3C2415;
+  --coffee-medium: #8B4513;
+  --coffee-light: #D2B48C;
+  --coffee-cream: #F5E6D3;
+  --coffee-milk: #FFF8F0;
+  
+  /* Accent Colors */
+  --accent-gold: #D4AF37;
+  --accent-bronze: #CD7F32;
+  --accent-warm: #FF6B35;
+  --accent-cool: #4A90E2;
+  
+  /* Neutral Colors */
+  --text-primary: #2C1810;
+  --text-secondary: #6B4E3D;
+  --text-muted: #8B7355;
+  --text-light: #A68B5B;
+  
+  /* Background Colors */
+  --bg-primary: #FFF8F0;
+  --bg-secondary: #F5E6D3;
+  --bg-card: #FFFFFF;
+  --bg-overlay: rgba(60, 36, 21, 0.8);
+  
+  /* Border & Shadow */
+  --border-light: #E8D5C4;
+  --border-medium: #D2B48C;
+  --shadow-soft: 0 4px 20px rgba(60, 36, 21, 0.08);
+  --shadow-medium: 0 8px 32px rgba(60, 36, 21, 0.12);
+  --shadow-strong: 0 16px 48px rgba(60, 36, 21, 0.16);
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #8B4513 0%, #D2B48C 100%);
+  --gradient-warm: linear-gradient(135deg, #FF6B35 0%, #D4AF37 100%);
+  --gradient-cool: linear-gradient(135deg, #4A90E2 0%, #8B4513 100%);
+  --gradient-card: linear-gradient(145deg, #FFFFFF 0%, #F5E6D3 100%);
+}
+
+/* Global styles */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', 'Poppins', 'Roboto', 'Helvetica Neue', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', 'Poppins', 'Roboto', "Helvetica Neue", sans-serif;
+  background: linear-gradient(135deg, var(--coffee-milk) 0%, var(--coffee-cream) 100%);
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--coffee-cream);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--coffee-medium);
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--coffee-dark);
+}
+
+/* Material Design customizations */
+.mat-mdc-card {
+  border-radius: 16px !important;
+  box-shadow: var(--shadow-soft) !important;
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-light) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.mat-mdc-card:hover {
+  box-shadow: var(--shadow-medium) !important;
+  transform: translateY(-2px);
+}
+
+.mat-mdc-button {
+  border-radius: 12px !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  font-family: 'Inter', sans-serif !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.mat-mdc-raised-button {
+  box-shadow: var(--shadow-soft) !important;
+  background: var(--gradient-primary) !important;
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+.mat-mdc-raised-button:hover {
+  box-shadow: var(--shadow-medium) !important;
+  transform: translateY(-1px);
+}
+
+.mat-mdc-form-field {
+  .mat-mdc-text-field-wrapper {
+    border-radius: 12px !important;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-light) !important;
+    transition: all 0.3s ease !important;
+  }
+  
+  .mat-mdc-text-field-wrapper:hover {
+    border-color: var(--coffee-medium) !important;
+  }
+  
+  .mat-mdc-text-field-wrapper.mdc-text-field--focused {
+    border-color: var(--coffee-medium) !important;
+    box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.1) !important;
+  }
+}
+
+.mat-mdc-table {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  
+  .mat-mdc-header-cell {
+    font-weight: 600 !important;
+    color: var(--text-primary) !important;
+    background: var(--coffee-cream) !important;
+    font-family: 'Inter', sans-serif !important;
+  }
+  
+  .mat-mdc-cell {
+    border-bottom: 1px solid var(--border-light) !important;
+    font-family: 'Inter', sans-serif !important;
+  }
+  
+  .mat-mdc-row:hover {
+    background: var(--coffee-cream) !important;
+  }
+}
+
+.mat-mdc-snack-bar-container {
+  border-radius: 12px !important;
+  background: var(--coffee-dark) !important;
+  color: white !important;
+}
+
+/* Utility classes */
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.mb-0 { margin-bottom: 0 !important; }
+.mb-1 { margin-bottom: 0.25rem !important; }
+.mb-2 { margin-bottom: 0.5rem !important; }
+.mb-3 { margin-bottom: 1rem !important; }
+.mb-4 { margin-bottom: 1.5rem !important; }
+.mb-5 { margin-bottom: 3rem !important; }
+
+.mt-0 { margin-top: 0 !important; }
+.mt-1 { margin-top: 0.25rem !important; }
+.mt-2 { margin-top: 0.5rem !important; }
+.mt-3 { margin-top: 1rem !important; }
+.mt-4 { margin-top: 1.5rem !important; }
+.mt-5 { margin-top: 3rem !important; }
+
+.p-0 { padding: 0 !important; }
+.p-1 { padding: 0.25rem !important; }
+.p-2 { padding: 0.5rem !important; }
+.p-3 { padding: 1rem !important; }
+.p-4 { padding: 1.5rem !important; }
+.p-5 { padding: 3rem !important; }
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  .d-md-none {
+    display: none !important;
+  }
+  
+  .d-md-block {
+    display: block !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .d-lg-none {
+    display: none !important;
+  }
+  
+  .d-lg-block {
+    display: block !important;
+  }
+}
