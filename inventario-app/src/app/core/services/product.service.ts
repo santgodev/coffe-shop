@@ -1,148 +1,161 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, BehaviorSubject } from 'rxjs';
-import { Product, CreateProductRequest, UpdateProductRequest, ProductCategory } from '../../models';
+import { BehaviorSubject, Observable, from } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
+import { SupabaseService } from './supabase.service';
+import { Product, Category } from '../../models/supabase.types';
 
 @Injectable({
-  providedIn: 'root'
+    providedIn: 'root'
 })
 export class ProductService {
-  private productsSubject = new BehaviorSubject<Product[]>(this.getMockProducts());
-  public products$ = this.productsSubject.asObservable();
+    private _products = new BehaviorSubject<Product[]>([]);
+    private _categories = new BehaviorSubject<Category[]>([]);
 
-  private categories: ProductCategory[] = [
-    { id: 1, name: 'Electrónicos', description: 'Dispositivos electrónicos', isActive: true },
-    { id: 2, name: 'Ropa', description: 'Vestimenta y accesorios', isActive: true },
-    { id: 3, name: 'Hogar', description: 'Artículos para el hogar', isActive: true },
-    { id: 4, name: 'Deportes', description: 'Artículos deportivos', isActive: true },
-    { id: 5, name: 'Libros', description: 'Libros y material educativo', isActive: true }
-  ];
-
-  private getMockProducts(): Product[] {
-    return [
-      {
-        id: 1,
-        name: 'Laptop HP Pavilion',
-        description: 'Laptop HP Pavilion 15 pulgadas, 8GB RAM, 256GB SSD',
-        sku: 'LAP-HP-001',
-        barcode: '1234567890123',
-        category: 'Electrónicos',
-        brand: 'HP',
-        price: 899.99,
-        cost: 650.00,
-        stock: 15,
-        minStock: 5,
-        maxStock: 50,
-        unit: 'unidad',
-        isActive: true,
-        imageUrl: 'https://via.placeholder.com/300x200',
-        createdAt: new Date('2024-01-15'),
-        updatedAt: new Date('2024-01-15')
-      },
-      {
-        id: 2,
-        name: 'Camiseta Nike',
-        description: 'Camiseta deportiva Nike talla M',
-        sku: 'CAM-NI-001',
-        barcode: '1234567890124',
-        category: 'Ropa',
-        brand: 'Nike',
-        price: 29.99,
-        cost: 15.00,
-        stock: 50,
-        minStock: 10,
-        maxStock: 100,
-        unit: 'unidad',
-        isActive: true,
-        imageUrl: 'https://via.placeholder.com/300x200',
-        createdAt: new Date('2024-01-16'),
-        updatedAt: new Date('2024-01-16')
-      },
-      {
-        id: 3,
-        name: 'Silla de Oficina',
-        description: 'Silla ergonómica para oficina',
-        sku: 'SIL-OF-001',
-        barcode: '1234567890125',
-        category: 'Hogar',
-        brand: 'IKEA',
-        price: 199.99,
-        cost: 120.00,
-        stock: 8,
-        minStock: 3,
-        maxStock: 25,
-        unit: 'unidad',
-        isActive: true,
-        imageUrl: 'https://via.placeholder.com/300x200',
-        createdAt: new Date('2024-01-17'),
-        updatedAt: new Date('2024-01-17')
-      }
-    ];
-  }
-
-  getProducts(): Observable<Product[]> {
-    return this.products$;
-  }
-
-  getProduct(id: number): Observable<Product | undefined> {
-    const products = this.productsSubject.value;
-    const product = products.find(p => p.id === id);
-    return of(product);
-  }
-
-  createProduct(productData: CreateProductRequest): Observable<Product> {
-    const products = this.productsSubject.value;
-    const newProduct: Product = {
-      id: Math.max(...products.map(p => p.id)) + 1,
-      ...productData,
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    const updatedProducts = [...products, newProduct];
-    this.productsSubject.next(updatedProducts);
-    return of(newProduct);
-  }
-
-  updateProduct(id: number, productData: UpdateProductRequest): Observable<Product> {
-    const products = this.productsSubject.value;
-    const index = products.findIndex(p => p.id === id);
-    
-    if (index === -1) {
-      throw new Error('Producto no encontrado');
+    constructor(private supabase: SupabaseService) {
+        this.loadProducts();
+        this.loadCategories();
     }
 
-    const updatedProduct = {
-      ...products[index],
-      ...productData,
-      updatedAt: new Date()
-    };
+    get products$(): Observable<Product[]> {
+        return this._products.asObservable();
+    }
 
-    const updatedProducts = [...products];
-    updatedProducts[index] = updatedProduct;
-    this.productsSubject.next(updatedProducts);
-    
-    return of(updatedProduct);
-  }
+    get categories$(): Observable<Category[]> {
+        return this._categories.asObservable();
+    }
 
-  deleteProduct(id: number): Observable<boolean> {
-    const products = this.productsSubject.value;
-    const updatedProducts = products.filter(p => p.id !== id);
-    this.productsSubject.next(updatedProducts);
-    return of(true);
-  }
+    async uploadImage(file: File): Promise<string> {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
 
-  getCategories(): Observable<ProductCategory[]> {
-    return of(this.categories);
-  }
+        const { data, error } = await this.supabase.client
+            .storage
+            .from('products')
+            .upload(filePath, file);
 
-  searchProducts(query: string): Observable<Product[]> {
-    const products = this.productsSubject.value;
-    const filteredProducts = products.filter(p => 
-      p.name.toLowerCase().includes(query.toLowerCase()) ||
-      p.sku.toLowerCase().includes(query.toLowerCase()) ||
-      p.description.toLowerCase().includes(query.toLowerCase())
-    );
-    return of(filteredProducts);
-  }
+        if (error) throw error;
+
+        const { data: publicUrlData } = this.supabase.client
+            .storage
+            .from('products')
+            .getPublicUrl(filePath);
+
+        return publicUrlData.publicUrl;
+    }
+
+    async loadProducts() {
+        const { data, error } = await this.supabase.client
+            .from('products')
+            .select('*')
+            .order('name');
+
+        if (error) {
+            console.error('Error loading products:', error);
+            return;
+        }
+
+        if (data) {
+            this._products.next(data as Product[]);
+        }
+    }
+
+    async loadCategories() {
+        const { data, error } = await this.supabase.client
+            .from('categories')
+            .select('*')
+            .eq('active', true)
+            .order('name');
+
+        if (error) {
+            console.error('Error loading categories:', error);
+            return;
+        }
+
+        if (data) {
+            this._categories.next(data as Category[]);
+        }
+    }
+
+    async createProduct(product: Partial<Product>) {
+        // Log input for debugging
+        console.log('ProductService: Creating product...', product);
+
+        // Remove ID if present to let DB generate it, or ensure it's undefined
+        const { id, created_at, ...newProduct } = product as any;
+
+        // SANITIZATION: Fix empty string for optional UUIDs
+        if (newProduct.category_id === '') {
+            newProduct.category_id = null;
+        }
+
+        const { data, error } = await this.supabase.client
+            .from('products')
+            .insert(newProduct)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('ProductService: Error inserting product', error);
+            throw error;
+        }
+
+        console.log('ProductService: Product created successfully', data);
+
+        if (data) {
+            const current = this._products.value;
+            this._products.next([...current, data as Product]);
+        }
+        return data;
+    }
+
+    async updateProduct(id: string, updates: Partial<Product>) {
+        const { data, error } = await this.supabase.client
+            .from('products')
+            .update(updates)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        if (data) {
+            const current = this._products.value;
+            const index = current.findIndex(p => p.id === id);
+            if (index !== -1) {
+                current[index] = data as Product;
+                this._products.next([...current]);
+            }
+        }
+        return data;
+    }
+
+    async deleteProduct(id: string) {
+        const { error } = await this.supabase.client
+            .from('products')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+
+        const current = this._products.value;
+        this._products.next(current.filter(p => p.id !== id));
+    }
+
+    // --- Category Management ---
+
+    async createCategory(category: Partial<Category>) {
+        const { data, error } = await this.supabase.client
+            .from('categories')
+            .insert(category)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        if (data) {
+            const current = this._categories.value;
+            this._categories.next([...current, data as Category]);
+        }
+    }
 }

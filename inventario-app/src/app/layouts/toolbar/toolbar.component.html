@@ -5,7 +5,8 @@
   </button>
 
   <!-- App title -->
-  <span class="app-title">Café Manager</span>
+  <!-- App title -->
+  <span class="app-title">Christ on the table</span>
 
   <!-- Spacer to push content to the right -->
   <span class="spacer"></span>
@@ -22,7 +23,7 @@
     <!-- User menu -->
     <button mat-button [matMenuTriggerFor]="userMenu" class="user-button">
       <mat-icon>account_circle</mat-icon>
-      <span class="user-name">{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
+      <span class="user-name">{{ currentUser?.username || currentUser?.email }}</span>
       <mat-icon>arrow_drop_down</mat-icon>
     </button>
   </div>

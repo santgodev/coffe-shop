@@ -1,187 +1,166 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
-import { Zone, CreateZoneRequest, UpdateZoneRequest, ZoneStats } from '../../models';
+import { BehaviorSubject, Observable, from, of } from 'rxjs';
+import { SupabaseService } from './supabase.service';
+import { Zone, Table } from '../../models/supabase.types';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ZoneService {
-  private zonesSubject = new BehaviorSubject<Zone[]>(this.getMockZones());
-  public zones$ = this.zonesSubject.asObservable();
+  private _zones = new BehaviorSubject<Zone[]>([]);
 
-  private getMockZones(): Zone[] {
-    return [
-      {
-        id: 1,
-        name: 'Terraza',
-        description: 'Área exterior con vista al jardín',
-        type: 'terrace',
-        capacity: 20,
-        isActive: true,
-        tables: [],
-        layout: {
-          width: 800,
-          height: 600,
-          backgroundColor: '#E8F5E8',
-          gridSize: 20,
-          snapToGrid: true
-        },
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01')
-      },
-      {
-        id: 2,
-        name: 'Piso 1 - Interior',
-        description: 'Área principal del café',
-        type: 'indoor',
-        floor: 1,
-        capacity: 30,
-        isActive: true,
-        tables: [],
-        layout: {
-          width: 1000,
-          height: 800,
-          backgroundColor: '#F5F5F5',
-          gridSize: 20,
-          snapToGrid: true
-        },
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01')
-      },
-      {
-        id: 3,
-        name: 'Piso 2 - Privado',
-        description: 'Área privada para eventos',
-        type: 'private',
-        floor: 2,
-        capacity: 15,
-        isActive: true,
-        tables: [],
-        layout: {
-          width: 600,
-          height: 500,
-          backgroundColor: '#FFF8F0',
-          gridSize: 20,
-          snapToGrid: true
-        },
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01')
-      },
-      {
-        id: 4,
-        name: 'Exterior - Patio',
-        description: 'Patio exterior con mesas al aire libre',
-        type: 'outdoor',
-        capacity: 25,
-        isActive: true,
-        tables: [],
-        layout: {
-          width: 700,
-          height: 500,
-          backgroundColor: '#E6F3FF',
-          gridSize: 20,
-          snapToGrid: true
-        },
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01')
-      }
-    ];
+  constructor(private supabase: SupabaseService) {
+    this.loadZones();
+    this.subscribeToZoneChanges();
   }
 
+  get zones$(): Observable<Zone[]> {
+    return this._zones.asObservable();
+  }
+
+  // Adaptor for components expecting getZones()
   getZones(): Observable<Zone[]> {
     return this.zones$;
   }
 
-  getZone(id: number): Observable<Zone | undefined> {
-    const zones = this.zonesSubject.value;
-    const zone = zones.find(z => z.id === id);
-    return of(zone);
-  }
+  async loadZones() {
+    const { data, error } = await this.supabase.client
+      .from('zones')
+      .select(`
+                *,
+                tables (*)
+            `)
+      .order('name');
 
-  createZone(zoneData: CreateZoneRequest): Observable<Zone> {
-    const zones = this.zonesSubject.value;
-    const newZone: Zone = {
-      id: Math.max(...zones.map(z => z.id)) + 1,
-      ...zoneData,
-      isActive: true,
-      tables: [],
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    const updatedZones = [...zones, newZone];
-    this.zonesSubject.next(updatedZones);
-    return of(newZone);
-  }
-
-  updateZone(id: number, zoneData: UpdateZoneRequest): Observable<Zone> {
-    const zones = this.zonesSubject.value;
-    const index = zones.findIndex(z => z.id === id);
-    
-    if (index === -1) {
-      throw new Error('Zona no encontrada');
+    if (error) {
+      console.error('Error loading zones:', error);
+      return;
     }
 
-    const updatedZone = {
-      ...zones[index],
-      ...zoneData,
-      updatedAt: new Date()
-    };
-
-    const updatedZones = [...zones];
-    updatedZones[index] = updatedZone;
-    this.zonesSubject.next(updatedZones);
-    
-    return of(updatedZone);
+    if (data) {
+      this._zones.next(data as Zone[]);
+    }
   }
 
-  deleteZone(id: number): Observable<boolean> {
-    const zones = this.zonesSubject.value;
-    const updatedZones = zones.filter(z => z.id !== id);
-    this.zonesSubject.next(updatedZones);
-    return of(true);
+  subscribeToZoneChanges() {
+    this.supabase.client
+      .channel('public:zones')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'zones' }, () => {
+        this.loadZones();
+      })
+      .subscribe();
   }
 
-  getZoneStats(): Observable<ZoneStats> {
-    const zones = this.zonesSubject.value;
-    const activeZones = zones.filter(z => z.isActive);
-    
-    let totalTables = 0;
-    let availableTables = 0;
-    let occupiedTables = 0;
-    let reservedTables = 0;
-    let maintenanceTables = 0;
+  async updateZone(id: string, updates: Partial<Zone>) {
+    const { data, error } = await this.supabase.client
+      .from('zones')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
 
-    activeZones.forEach(zone => {
-      totalTables += zone.tables.length;
-      zone.tables.forEach(table => {
-        switch (table.status) {
-          case 'available':
-            availableTables++;
-            break;
-          case 'occupied':
-            occupiedTables++;
-            break;
-          case 'reserved':
-            reservedTables++;
-            break;
-          case 'maintenance':
-            maintenanceTables++;
-            break;
-        }
+    if (error) throw error;
+
+    // Optimistic update or wait for realtime
+    // Optimistic update
+    const current = this._zones.value;
+    // Map the update
+    const updatedList = current.map(z => z.id === id ? { ...z, ...updates } : z);
+    this._zones.next(updatedList as Zone[]);
+
+    // Also re-fetch to ensure relations (tables) are correct if needed, but this gives immediate feedback
+    // this.loadZones();
+    return data;
+  }
+
+  async deleteZone(id: string) {
+    const { error } = await this.supabase.client
+      .from('zones')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  }
+
+  // Helper for stats (calculated on frontend from loaded data to avoid complex queries)
+  getZoneStats(): Observable<any> {
+    return new Observable(observer => {
+      this.zones$.subscribe(zones => {
+        let totalTables = 0;
+        let availableTables = 0;
+        let occupiedTables = 0;
+
+        zones.forEach(zone => {
+          if (zone.tables) {
+            totalTables += zone.tables.length;
+            zone.tables.forEach((t: Table) => {
+              if (t.status === 'free') availableTables++;
+              if (t.status === 'occupied') occupiedTables++;
+            });
+          }
+        });
+
+        const stats = {
+          totalZones: zones.length,
+          activeZones: zones.filter(z => z.active).length,
+          totalTables,
+          availableTables,
+          occupiedTables,
+        };
+        observer.next(stats);
       });
     });
+  }
+  // Auto-seed for development/recovery
+  async checkAndSeedZones() {
+    console.log('Checking zones for seeding...');
 
-    const stats: ZoneStats = {
-      totalZones: zones.length,
-      activeZones: activeZones.length,
-      totalTables,
-      availableTables,
-      occupiedTables,
-      reservedTables,
-      maintenanceTables
-    };
+    // Check if zones exist
+    const { count, error: countError } = await this.supabase.client
+      .from('zones')
+      .select('*', { count: 'exact', head: true });
 
-    return of(stats);
+    if (countError) {
+      console.error('Error checking zones:', countError);
+      return;
+    }
+
+    if (count === 0) {
+      console.log('No zones found. Attempting to seed...');
+
+      const fullZones = [
+        { name: 'Salón Principal', type: 'indoor', capacity: 40, active: true, floor: 1 },
+        { name: 'Terraza', type: 'outdoor', capacity: 20, active: true, floor: 1 },
+        { name: 'VIP', type: 'private', capacity: 10, active: true, floor: 2 }
+      ];
+
+      // Try full seed first
+      const { error: fullError } = await this.supabase.client.from('zones').insert(fullZones);
+
+      if (fullError) {
+        console.warn('Full seed failed (likely schema mismatch). Attempting minimal seed...', fullError);
+
+        // Fallback: Minimal seed (just names)
+        const minimalZones = [
+          { name: 'Salón Principal' },
+          { name: 'Terraza' },
+          { name: 'VIP' }
+        ];
+
+        const { error: minError } = await this.supabase.client.from('zones').insert(minimalZones);
+
+        if (minError) {
+          console.error('Minimal seed also failed:', minError);
+          alert(`Error creating zones: ${minError.message || minError.details || JSON.stringify(minError)}`);
+        } else {
+          console.log('Minimal zones seeded successfully.');
+          alert('Zones created with limited data. Your database schema may need updates (missing columns like "type" or "capacity").');
+          this.loadZones();
+        }
+      } else {
+        console.log('Zones seeded successfully with full data.');
+        this.loadZones();
+      }
+    }
   }
 }

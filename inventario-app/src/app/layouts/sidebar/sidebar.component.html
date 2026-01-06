@@ -1,22 +1,24 @@
 <div class="sidebar-content">
   <!-- Logo/Brand -->
   <div class="sidebar-header">
-    <h2 class="brand-title">
-      <mat-icon>local_cafe</mat-icon>
-      Café Manager
-    </h2>
+    <div class="brand-text-container">
+      <h2 class="brand-title">
+        <mat-icon>local_cafe</mat-icon>
+        Christ on the table
+      </h2>
+    </div>
   </div>
 
   <!-- Navigation Menu -->
   <mat-nav-list class="nav-list">
     <a mat-list-item routerLink="/tables" routerLinkActive="active">
       <mat-icon matListItemIcon>table_restaurant</mat-icon>
-      <span matListItemTitle>Mesas</span>
+      <span matListItemTitle>Zonas</span>
     </a>
 
     <a mat-list-item routerLink="/tables/list" routerLinkActive="active">
       <mat-icon matListItemIcon>list</mat-icon>
-      <span matListItemTitle>Lista de Mesas</span>
+      <span matListItemTitle>Lista de mesas</span>
     </a>
 
     <a mat-list-item routerLink="/dashboard" routerLinkActive="active">
@@ -24,14 +26,16 @@
       <span matListItemTitle>Dashboard</span>
     </a>
 
-    <a mat-list-item routerLink="/products" routerLinkActive="active">
-      <mat-icon matListItemIcon>inventory_2</mat-icon>
-      <span matListItemTitle>Productos</span>
-    </a>
+
 
     <a mat-list-item routerLink="/inventory" routerLinkActive="active">
       <mat-icon matListItemIcon>warehouse</mat-icon>
       <span matListItemTitle>Inventario</span>
+    </a>
+
+    <a mat-list-item routerLink="/caja" routerLinkActive="active">
+      <mat-icon matListItemIcon>point_of_sale</mat-icon>
+      <span matListItemTitle>Caja</span>
     </a>
 
     <a mat-list-item routerLink="/sales" routerLinkActive="active">
@@ -42,6 +46,16 @@
     <a mat-list-item routerLink="/reports" routerLinkActive="active">
       <mat-icon matListItemIcon>assessment</mat-icon>
       <span matListItemTitle>Reportes</span>
+    </a>
+
+    <a mat-list-item routerLink="/kitchen" routerLinkActive="active">
+      <mat-icon matListItemIcon>soup_kitchen</mat-icon>
+      <span matListItemTitle>Cocina</span>
+    </a>
+
+    <a mat-list-item routerLink="/stations" routerLinkActive="active">
+      <mat-icon matListItemIcon>storefront</mat-icon> <!-- Or 'room_service' or 'kitchen' -->
+      <span matListItemTitle>Estaciones</span>
     </a>
 
     <!-- Divider -->

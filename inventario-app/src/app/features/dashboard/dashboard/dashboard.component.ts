@@ -4,7 +4,8 @@ import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
-import { DashboardMetrics, User } from '../../../models';
+import { DashboardMetrics } from '../../../models';
+import { User } from '@supabase/supabase-js';
 import { AuthService, DashboardService } from '../../../core/services';
 
 interface Activity {
@@ -43,28 +44,8 @@ export class DashboardComponent implements OnInit {
   }
 
   private loadRecentActivities(): void {
-    // Mock recent activities
-    this.recentActivities = [
-      {
-        icon: 'point_of_sale',
-        text: 'Nueva venta registrada por $199.99',
-        time: 'Hace 2 horas'
-      },
-      {
-        icon: 'inventory',
-        text: 'Stock actualizado para Laptop HP Pavilion',
-        time: 'Hace 4 horas'
-      },
-      {
-        icon: 'warning',
-        text: 'Alerta: Stock bajo en Camiseta Nike',
-        time: 'Ayer'
-      },
-      {
-        icon: 'add_box',
-        text: 'Nuevo producto agregado: Silla de Oficina',
-        time: 'Hace 2 días'
-      }
-    ];
+    this.dashboardService.getRecentActivities().subscribe(activities => {
+      this.recentActivities = activities;
+    });
   }
 }

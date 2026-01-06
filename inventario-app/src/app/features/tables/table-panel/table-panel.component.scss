@@ -183,7 +183,7 @@
 
 .filters-row {
   display: flex;
-  gap: 20px;
+  gap: 16px;
   align-items: center;
   flex-wrap: wrap;
   padding: 24px;
@@ -191,24 +191,29 @@
 
 .filter-field {
   min-width: 200px;
+  /* Ensure form field takes up space for alignment */
 }
 
 .clear-filters {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  height: 48px;
+  height: 56px; /* Match standard mat-form-field height */
   border-radius: 12px;
   background: var(--coffee-cream) !important;
   color: var(--text-primary) !important;
   font-weight: 500;
   font-family: 'Inter', sans-serif;
   transition: all 0.3s ease;
+  padding: 0 24px;
 }
 
 .clear-filters:hover {
-  background: var(--coffee-light) !important;
+  background: var(--coffee-medium) !important;
+  color: white !important;
   transform: translateY(-1px);
+  box-shadow: var(--shadow-small);
 }
 
 .tables-section {

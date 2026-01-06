@@ -55,23 +55,51 @@ export class LoginComponent implements OnInit {
     }
   }
 
+  isRegisterMode = false;
+
+  toggleMode() {
+    this.isRegisterMode = !this.isRegisterMode;
+  }
+
   onSubmit(): void {
     if (this.loginForm.valid) {
       this.isLoading = true;
-      const credentials = this.loginForm.value;
+      const { username, password } = this.loginForm.value;
 
-      this.authService.login(credentials).subscribe({
-        next: (response) => {
-          this.isLoading = false;
-          this.router.navigate(['/dashboard']);
-        },
-        error: (error) => {
-          this.isLoading = false;
-          console.error('Error de login:', error);
-          // In a real app, you would show a proper error message
-          alert('Credenciales inválidas. Usa: admin/password, manager/password, o employee/password');
-        }
-      });
+      if (this.isRegisterMode) {
+        this.authService.signUp(username, password).subscribe({
+          next: (response: any) => {
+            this.isLoading = false;
+            if (response.error) {
+              alert('Error al registrarse: ' + response.error.message);
+            } else {
+              alert('Registro exitoso. Por favor revisa tu correo para confirmar (si está habilitado) o inicia sesión.');
+              this.isRegisterMode = false; // Switch back to login
+            }
+          },
+          error: (err) => {
+            this.isLoading = false;
+            console.error(err);
+            alert('Error en el registro');
+          }
+        });
+      } else {
+        this.authService.login({ username, password }).subscribe({
+          next: (response: any) => {
+            this.isLoading = false;
+            if (response.error) {
+              alert('Error de login: ' + response.error.message);
+            } else {
+              this.router.navigate(['/dashboard']);
+            }
+          },
+          error: (error: any) => {
+            this.isLoading = false;
+            console.error('Error de login:', error);
+            alert('Credenciales inválidas o error de conexión.');
+          }
+        });
+      }
     }
   }
 

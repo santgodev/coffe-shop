@@ -7,8 +7,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatDividerModule } from '@angular/material/divider';
-import { User } from '../../models';
-import { AuthService } from '../../core/services';
+import { Profile } from '../../models/supabase.types';
+import { AuthService } from '../../core/services/auth.service';
 
 interface Notification {
   id: number;
@@ -37,17 +37,20 @@ interface Notification {
 export class ToolbarComponent implements OnInit {
   @Output() toggleSidebar = new EventEmitter<void>();
 
-  currentUser: User | null = null;
+  currentUser: Profile | null = null;
   notificationCount = 3;
   notifications: Notification[] = [];
 
   constructor(
     private authService: AuthService,
     private router: Router
-  ) {}
+  ) { }
 
   ngOnInit(): void {
-    this.currentUser = this.authService.getCurrentUser();
+    // Subscribe to profile changes
+    this.authService.profile$.subscribe(profile => {
+      this.currentUser = profile;
+    });
     this.loadNotifications();
   }
 
@@ -90,7 +93,6 @@ export class ToolbarComponent implements OnInit {
   }
 
   onLogout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']);
+    this.authService.signOut();
   }
 }

@@ -1,99 +1,110 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
-import { User, LoginRequest, LoginResponse } from '../../models';
+import { Router } from '@angular/router';
+import { AuthSession, User, createClient } from '@supabase/supabase-js';
+import { BehaviorSubject, Observable, from, of } from 'rxjs';
+import { map, switchMap, tap } from 'rxjs/operators';
+import { SupabaseService } from '../../core/services/supabase.service';
+import { Profile } from '../../models/supabase.types';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private currentUserSubject = new BehaviorSubject<User | null>(null);
-  public currentUser$ = this.currentUserSubject.asObservable();
+  private _session = new BehaviorSubject<AuthSession | null>(null);
+  private _user = new BehaviorSubject<User | null>(null);
+  private _profile = new BehaviorSubject<Profile | null>(null);
 
-  private readonly MOCK_USERS: User[] = [
-    {
-      id: 1,
-      username: 'admin',
-      email: 'admin@inventario.com',
-      firstName: 'Administrador',
-      lastName: 'Sistema',
-      role: 'admin',
-      isActive: true,
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01')
-    },
-    {
-      id: 2,
-      username: 'manager',
-      email: 'manager@inventario.com',
-      firstName: 'Gerente',
-      lastName: 'Ventas',
-      role: 'manager',
-      isActive: true,
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01')
-    },
-    {
-      id: 3,
-      username: 'employee',
-      email: 'employee@inventario.com',
-      firstName: 'Empleado',
-      lastName: 'Tienda',
-      role: 'employee',
-      isActive: true,
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01')
-    }
-  ];
-
-  constructor() {
-    // Check if user is already logged in (localStorage)
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-      this.currentUserSubject.next(JSON.parse(savedUser));
-    }
+  constructor(
+    private supabase: SupabaseService,
+    private router: Router
+  ) {
+    this.loadSession();
+    this.supabase.client.auth.onAuthStateChange((event, session) => {
+      this._session.next(session);
+      this._user.next(session?.user ?? null);
+      if (session?.user) {
+        this.fetchProfile(session.user.id);
+      } else {
+        this._profile.next(null);
+      }
+    });
   }
 
-  login(credentials: LoginRequest): Observable<LoginResponse> {
-    const user = this.MOCK_USERS.find(
-      u => u.username === credentials.username && 
-           credentials.password === 'password' // Simple mock password
-    );
-
-    if (user) {
-      const response: LoginResponse = {
-        user,
-        token: 'mock-jwt-token-' + user.id,
-        expiresIn: 3600
-      };
-
-      // Save to localStorage
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      localStorage.setItem('token', response.token);
-      
-      this.currentUserSubject.next(user);
-      
-      return of(response);
-    } else {
-      throw new Error('Credenciales inválidas');
-    }
+  get session$() {
+    return this._session.asObservable();
   }
 
-  logout(): void {
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('token');
-    this.currentUserSubject.next(null);
+  get user$() {
+    return this._user.asObservable();
+  }
+
+  get profile$() {
+    return this._profile.asObservable();
+  }
+
+  get currentUserProfile(): Profile | null {
+    return this._profile.value;
+  }
+
+  // Helpers for compatibility/ease of use
+  isAuthenticated(): boolean {
+    return !!this._session.value;
   }
 
   getCurrentUser(): User | null {
-    return this.currentUserSubject.value;
+    return this._user.value;
   }
 
-  isAuthenticated(): boolean {
-    return this.currentUserSubject.value !== null;
+  login(credentials: any) {
+    return this.signInWithPassword(credentials.username || credentials.email, credentials.password);
   }
 
-  hasRole(role: string): boolean {
-    const user = this.getCurrentUser();
-    return user ? user.role === role : false;
+  async loadSession() {
+    const { data } = await this.supabase.client.auth.getSession();
+    this._session.next(data.session);
+    this._user.next(data.session?.user ?? null);
+    if (data.session?.user) {
+      this.fetchProfile(data.session.user.id);
+    }
+  }
+
+  async signIn(email: string) {
+    // For simplicity, using magic link or passwordless could be an option, 
+    // but typically restaurant staff might use email/password.
+    // For now, implementing Magic Link for ease of dev testing, or Password if preferred.
+    // Let's assume Password for staff.
+    // NOTE: This requires the user to be created in Supabase Auth module first manually or via signup.
+    return this.supabase.client.auth.signInWithOtp({ email });
+  }
+
+  signInWithPassword(email: string, password: string) {
+    return from(this.supabase.client.auth.signInWithPassword({
+      email,
+      password
+    }));
+  }
+
+  signUp(email: string, password: string) {
+    return from(this.supabase.client.auth.signUp({
+      email,
+      password
+    }));
+  }
+
+  async signOut() {
+    await this.supabase.client.auth.signOut();
+    this.router.navigate(['/login']);
+  }
+
+  private async fetchProfile(userId: string) {
+    const { data, error } = await this.supabase.client
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (data) {
+      this._profile.next(data as Profile);
+    }
   }
 }

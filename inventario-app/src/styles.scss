@@ -1,9 +1,88 @@
 /* You can add global styles to this file, and also import other style files */
+@use '@angular/material' as mat;
 
-@import '@angular/material/prebuilt-themes/indigo-pink.css';
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
 
-/* Coffee Shop Theme Variables */
+@include mat.core();
+
+/* Define Coffee Shop Palette */
+$coffee-primary: mat.m2-define-palette((50: #fbeaeb,
+      100: #f5c7c2,
+      200: #efa19e,
+      300: #e97b7a,
+      400: #e55e5e,
+      500: #8B4513,
+      /* Main Coffee Color */
+      600: #833e11,
+      700: #78360e,
+      800: #6e2e0b,
+      900: #5c2006,
+      A100: #ffd7d2,
+      A200: #feb1a6,
+      A400: #fc7f75,
+      A700: #fc665c,
+      contrast: (50: #000000,
+        100: #000000,
+        200: #000000,
+        300: #000000,
+        400: #000000,
+        500: #ffffff,
+        600: #ffffff,
+        700: #ffffff,
+        800: #ffffff,
+        900: #ffffff,
+        A100: #000000,
+        A200: #000000,
+        A400: #000000,
+        A700: #000000,
+      )));
+
+$coffee-accent: mat.m2-define-palette((50: #fff8e1,
+      100: #ffecb3,
+      200: #ffe082,
+      300: #ffd54f,
+      400: #ffca28,
+      500: #D4AF37,
+      /* Gold Accent */
+      600: #ffb300,
+      700: #ffa000,
+      800: #ff8f00,
+      900: #ff6f00,
+      A100: #ffe57f,
+      A200: #ffd740,
+      A400: #ffc400,
+      A700: #ffab00,
+      contrast: (50: #000000,
+        100: #000000,
+        200: #000000,
+        300: #000000,
+        400: #000000,
+        500: #000000,
+        600: #000000,
+        700: #000000,
+        800: #000000,
+        900: #000000,
+        A100: #000000,
+        A200: #000000,
+        A400: #000000,
+        A700: #000000,
+      )));
+
+$coffee-warn: mat.m2-define-palette(mat.$m2-red-palette);
+
+/* Define the theme */
+$coffee-theme: mat.m2-define-light-theme((color: (primary: $coffee-primary,
+        accent: $coffee-accent,
+        warn: $coffee-warn,
+      ),
+      typography: mat.m2-define-typography-config($font-family: 'Inter, sans-serif'
+      ),
+      density: 0));
+
+/* Apply the theme */
+@include mat.all-component-themes($coffee-theme);
+
+/* Coffee Shop Theme Variables - Preserved */
 :root {
   /* Coffee Color Palette */
   --coffee-dark: #3C2415;
@@ -11,32 +90,32 @@
   --coffee-light: #D2B48C;
   --coffee-cream: #F5E6D3;
   --coffee-milk: #FFF8F0;
-  
+
   /* Accent Colors */
   --accent-gold: #D4AF37;
   --accent-bronze: #CD7F32;
   --accent-warm: #FF6B35;
   --accent-cool: #4A90E2;
-  
+
   /* Neutral Colors */
   --text-primary: #2C1810;
   --text-secondary: #6B4E3D;
   --text-muted: #8B7355;
   --text-light: #A68B5B;
-  
+
   /* Background Colors */
   --bg-primary: #FFF8F0;
   --bg-secondary: #F5E6D3;
   --bg-card: #FFFFFF;
   --bg-overlay: rgba(60, 36, 21, 0.8);
-  
+
   /* Border & Shadow */
   --border-light: #E8D5C4;
   --border-medium: #D2B48C;
   --shadow-soft: 0 4px 20px rgba(60, 36, 21, 0.08);
   --shadow-medium: 0 8px 32px rgba(60, 36, 21, 0.12);
   --shadow-strong: 0 16px 48px rgba(60, 36, 21, 0.16);
-  
+
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, #8B4513 0%, #D2B48C 100%);
   --gradient-warm: linear-gradient(135deg, #FF6B35 0%, #D4AF37 100%);
@@ -49,7 +128,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;
@@ -88,7 +168,7 @@ body {
   background: var(--coffee-dark);
 }
 
-/* Material Design customizations */
+/* Material Design customizations - Now integrated with custom theme */
 .mat-mdc-card {
   border-radius: 16px !important;
   box-shadow: var(--shadow-soft) !important;
@@ -113,6 +193,7 @@ body {
 
 .mat-mdc-raised-button {
   box-shadow: var(--shadow-soft) !important;
+  /* Use theme color effectively or gradient */
   background: var(--gradient-primary) !important;
   color: white !important;
   font-weight: 600 !important;
@@ -123,40 +204,56 @@ body {
   transform: translateY(-1px);
 }
 
+/* Updated Form Field Styling integrating with custom theme variables */
+/* Updated Form Field Styling integrating with custom theme variables */
 .mat-mdc-form-field {
-  .mat-mdc-text-field-wrapper {
-    border-radius: 12px !important;
-    background: var(--bg-card) !important;
-    border: 1px solid var(--border-light) !important;
-    transition: all 0.3s ease !important;
+  --mdc-outlined-text-field-outline-color: var(--border-light);
+  --mdc-outlined-text-field-focus-outline-color: var(--coffee-medium);
+  --mdc-outlined-text-field-hover-outline-color: var(--coffee-medium);
+  --mdc-outlined-text-field-container-shape: 16px;
+  /* softer rounded corners */
+
+  /* Text colors */
+  --mdc-outlined-text-field-input-text-color: var(--text-primary);
+  --mdc-outlined-text-field-label-text-color: var(--text-secondary);
+  --mdc-outlined-text-field-focus-label-text-color: var(--coffee-medium);
+
+  /* Customize the floating label to be less "Material" */
+  .mdc-notched-outline__notch {
+    border-right: none !important;
+    border-left: none !important;
   }
-  
-  .mat-mdc-text-field-wrapper:hover {
-    border-color: var(--coffee-medium) !important;
-  }
-  
-  .mat-mdc-text-field-wrapper.mdc-text-field--focused {
-    border-color: var(--coffee-medium) !important;
-    box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.1) !important;
-  }
+}
+
+/* Override MDC structure for a cleaner look */
+.mat-mdc-text-field-wrapper {
+  background: white !important;
+  /* Ensure clean background */
+}
+
+/* Floating label adjustments */
+.mdc-floating-label {
+  font-weight: 500 !important;
+  font-family: 'Inter', sans-serif !important;
+  letter-spacing: 0.5px !important;
 }
 
 .mat-mdc-table {
   border-radius: 12px !important;
   overflow: hidden !important;
-  
+
   .mat-mdc-header-cell {
     font-weight: 600 !important;
     color: var(--text-primary) !important;
     background: var(--coffee-cream) !important;
     font-family: 'Inter', sans-serif !important;
   }
-  
+
   .mat-mdc-cell {
     border-bottom: 1px solid var(--border-light) !important;
     font-family: 'Inter', sans-serif !important;
   }
-  
+
   .mat-mdc-row:hover {
     background: var(--coffee-cream) !important;
   }
@@ -168,7 +265,7 @@ body {
   color: white !important;
 }
 
-/* Fix Material Design purple overlay */
+/* Fix Material Design options */
 .mat-mdc-option {
   background: var(--bg-card) !important;
   color: var(--text-primary) !important;
@@ -183,13 +280,7 @@ body {
   color: var(--text-primary) !important;
 }
 
-.mat-mdc-select-panel {
-  background: var(--bg-card) !important;
-  border: 1px solid var(--border-light) !important;
-  border-radius: 12px !important;
-  box-shadow: var(--shadow-medium) !important;
-}
-
+.mat-mdc-select-panel,
 .mat-mdc-menu-panel {
   background: var(--bg-card) !important;
   border: 1px solid var(--border-light) !important;
@@ -218,33 +309,84 @@ body {
   text-align: left;
 }
 
-.mb-0 { margin-bottom: 0 !important; }
-.mb-1 { margin-bottom: 0.25rem !important; }
-.mb-2 { margin-bottom: 0.5rem !important; }
-.mb-3 { margin-bottom: 1rem !important; }
-.mb-4 { margin-bottom: 1.5rem !important; }
-.mb-5 { margin-bottom: 3rem !important; }
+.mb-0 {
+  margin-bottom: 0 !important;
+}
 
-.mt-0 { margin-top: 0 !important; }
-.mt-1 { margin-top: 0.25rem !important; }
-.mt-2 { margin-top: 0.5rem !important; }
-.mt-3 { margin-top: 1rem !important; }
-.mt-4 { margin-top: 1.5rem !important; }
-.mt-5 { margin-top: 3rem !important; }
+.mb-1 {
+  margin-bottom: 0.25rem !important;
+}
 
-.p-0 { padding: 0 !important; }
-.p-1 { padding: 0.25rem !important; }
-.p-2 { padding: 0.5rem !important; }
-.p-3 { padding: 1rem !important; }
-.p-4 { padding: 1.5rem !important; }
-.p-5 { padding: 3rem !important; }
+.mb-2 {
+  margin-bottom: 0.5rem !important;
+}
+
+.mb-3 {
+  margin-bottom: 1rem !important;
+}
+
+.mb-4 {
+  margin-bottom: 1.5rem !important;
+}
+
+.mb-5 {
+  margin-bottom: 3rem !important;
+}
+
+.mt-0 {
+  margin-top: 0 !important;
+}
+
+.mt-1 {
+  margin-top: 0.25rem !important;
+}
+
+.mt-2 {
+  margin-top: 0.5rem !important;
+}
+
+.mt-3 {
+  margin-top: 1rem !important;
+}
+
+.mt-4 {
+  margin-top: 1.5rem !important;
+}
+
+.mt-5 {
+  margin-top: 3rem !important;
+}
+
+.p-0 {
+  padding: 0 !important;
+}
+
+.p-1 {
+  padding: 0.25rem !important;
+}
+
+.p-2 {
+  padding: 0.5rem !important;
+}
+
+.p-3 {
+  padding: 1rem !important;
+}
+
+.p-4 {
+  padding: 1.5rem !important;
+}
+
+.p-5 {
+  padding: 3rem !important;
+}
 
 /* Responsive utilities */
 @media (max-width: 768px) {
   .d-md-none {
     display: none !important;
   }
-  
+
   .d-md-block {
     display: block !important;
   }
@@ -254,7 +396,7 @@ body {
   .d-lg-none {
     display: none !important;
   }
-  
+
   .d-lg-block {
     display: block !important;
   }

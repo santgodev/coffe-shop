@@ -9,7 +9,7 @@
         </h1>
         <p class="panel-subtitle">Organiza las zonas de tu café y gestiona las mesas</p>
       </div>
-      
+
       <div class="stats-section">
         <div class="stat-card" *ngFor="let stat of (stats$ | async)">
           <div class="stat-icon" [class]="getStatIconClass(stat.key)">
@@ -24,17 +24,12 @@
     </div>
 
     <div class="actions-section">
-      <button mat-raised-button 
-              color="primary" 
-              (click)="openZoneDialog()"
-              class="action-button">
+      <button mat-raised-button color="primary" (click)="openZoneDialog()" class="action-button">
         <mat-icon>add_location</mat-icon>
         Nueva Zona
       </button>
-      
-      <button mat-stroked-button 
-              (click)="toggleView()"
-              class="view-toggle">
+
+      <button mat-stroked-button (click)="toggleView()" class="view-toggle">
         <mat-icon>{{ isGridView ? 'view_list' : 'grid_view' }}</mat-icon>
         {{ isGridView ? 'Vista Lista' : 'Vista Grilla' }}
       </button>
@@ -82,25 +77,23 @@
   <div class="zones-section">
     <!-- Vista de Grilla -->
     <div class="zones-grid" *ngIf="isGridView">
-      <div class="zone-card" 
-           *ngFor="let zone of filteredZones" 
-           [class]="'zone-' + zone.type"
-           (click)="openZoneBoard(zone)">
+      <div class="zone-card" *ngFor="let zone of filteredZones" [class]="'zone-' + zone.type"
+        (click)="openZoneBoard(zone)">
         <div class="zone-header">
           <div class="zone-type">
             <mat-icon>{{ getZoneTypeIcon(zone.type) }}</mat-icon>
             <span>{{ getZoneTypeText(zone.type) }}</span>
           </div>
-          <div class="zone-status" [class]="zone.isActive ? 'active' : 'inactive'">
-            <mat-icon>{{ zone.isActive ? 'check_circle' : 'cancel' }}</mat-icon>
-            <span>{{ zone.isActive ? 'Activa' : 'Inactiva' }}</span>
+          <div class="zone-status" [class]="zone.active ? 'active' : 'inactive'">
+            <mat-icon>{{ zone.active ? 'check_circle' : 'cancel' }}</mat-icon>
+            <span>{{ zone.active ? 'Activa' : 'Inactiva' }}</span>
           </div>
         </div>
 
         <div class="zone-content">
           <h3 class="zone-name">{{ zone.name }}</h3>
           <p class="zone-description">{{ zone.description }}</p>
-          
+
           <div class="zone-info">
             <div class="info-item">
               <mat-icon>people</mat-icon>
@@ -112,7 +105,7 @@
             </div>
             <div class="info-item">
               <mat-icon>table_restaurant</mat-icon>
-              <span>{{ zone.tables.length }} mesas</span>
+              <span>{{ (zone.tables || []).length }} mesas</span>
             </div>
           </div>
 
@@ -134,24 +127,16 @@
         </div>
 
         <div class="zone-actions">
-          <button mat-icon-button 
-                  (click)="editZone(zone)" 
-                  matTooltip="Editar Zona"
-                  class="action-btn edit">
+          <button mat-icon-button (click)="editZone(zone)" matTooltip="Editar Zona" class="action-btn edit">
             <mat-icon>edit</mat-icon>
           </button>
-          
-          <button mat-icon-button 
-                  (click)="toggleZoneStatus(zone)" 
-                  [matTooltip]="zone.isActive ? 'Desactivar Zona' : 'Activar Zona'"
-                  class="action-btn toggle">
-            <mat-icon>{{ zone.isActive ? 'visibility_off' : 'visibility' }}</mat-icon>
+
+          <button mat-icon-button (click)="toggleZoneStatus(zone)"
+            [matTooltip]="zone.active ? 'Desactivar Zona' : 'Activar Zona'" class="action-btn toggle">
+            <mat-icon>{{ zone.active ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
-          
-          <button mat-icon-button 
-                  (click)="deleteZone(zone)" 
-                  matTooltip="Eliminar Zona"
-                  class="action-btn delete">
+
+          <button mat-icon-button (click)="deleteZone(zone)" matTooltip="Eliminar Zona" class="action-btn delete">
             <mat-icon>delete</mat-icon>
           </button>
         </div>
@@ -171,67 +156,60 @@
             <div class="list-column">Estado</div>
             <div class="list-column">Acciones</div>
           </div>
-          
+
           <div class="list-row" *ngFor="let zone of filteredZones">
             <div class="list-cell">
               <div class="zone-name">{{ zone.name }}</div>
               <div class="zone-description">{{ zone.description }}</div>
             </div>
-            
+
             <div class="list-cell">
               <div class="zone-type">
                 <mat-icon>{{ getZoneTypeIcon(zone.type) }}</mat-icon>
                 <span>{{ getZoneTypeText(zone.type) }}</span>
               </div>
             </div>
-            
+
             <div class="list-cell">
               <span class="floor-info" *ngIf="zone.floor !== undefined">Piso {{ zone.floor }}</span>
               <span class="no-floor" *ngIf="zone.floor === undefined">-</span>
             </div>
-            
+
             <div class="list-cell">
               <div class="capacity-info">
                 <mat-icon>people</mat-icon>
                 <span>{{ zone.capacity }}</span>
               </div>
             </div>
-            
+
             <div class="list-cell">
               <div class="tables-info">
                 <mat-icon>table_restaurant</mat-icon>
-                <span>{{ zone.tables.length }}</span>
+                <span>{{ (zone.tables || []).length }}</span>
               </div>
             </div>
-            
+
             <div class="list-cell">
-              <div class="zone-status" [class]="zone.isActive ? 'active' : 'inactive'">
-                <mat-icon>{{ zone.isActive ? 'check_circle' : 'cancel' }}</mat-icon>
-                <span>{{ zone.isActive ? 'Activa' : 'Inactiva' }}</span>
+              <div class="zone-status" [class]="zone.active ? 'active' : 'inactive'">
+                <mat-icon>{{ zone.active ? 'check_circle' : 'cancel' }}</mat-icon>
+                <span>{{ zone.active ? 'Activa' : 'Inactiva' }}</span>
               </div>
             </div>
-            
+
             <div class="list-cell">
               <div class="action-buttons">
-                <button mat-icon-button 
-                        (click)="openZoneBoard(zone)" 
-                        matTooltip="Abrir Tablero"
-                        class="action-btn board">
+                <button mat-icon-button (click)="openZoneBoard(zone)" matTooltip="Abrir Tablero"
+                  class="action-btn board">
                   <mat-icon>dashboard</mat-icon>
                 </button>
-                
-                <button mat-icon-button 
-                        (click)="editZone(zone)" 
-                        matTooltip="Editar Zona"
-                        class="action-btn edit">
+
+                <button mat-icon-button (click)="editZone(zone)" matTooltip="Editar Zona" class="action-btn edit">
                   <mat-icon>edit</mat-icon>
                 </button>
-                
-                <button mat-icon-button 
-                        (click)="toggleZoneStatus(zone)" 
-                        [matTooltip]="zone.isActive ? 'Desactivar' : 'Activar'"
-                        class="action-btn toggle">
-                  <mat-icon>{{ zone.isActive ? 'visibility_off' : 'visibility' }}</mat-icon>
+
+                <button mat-icon-button (click)="toggleZoneStatus(zone)"
+                  [matTooltip]="zone.active ? 'Desactivar' : 'Activar'" class="action-btn toggle">
+                  <mat-icon>{{ zone.active ? 'visibility_off' : 'visibility' }}</mat-icon>
                 </button>
               </div>
             </div>

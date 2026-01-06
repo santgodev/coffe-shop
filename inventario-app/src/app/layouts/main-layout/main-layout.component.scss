@@ -11,12 +11,25 @@
   border-right: 1px solid var(--border-light);
 }
 
+.layout-content {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100vh !important;
+  overflow: hidden !important;
+}
+
 .main-content {
-  padding: 32px;
+  padding: 0; // Padding handled by individual pages for full-width capability
   background: var(--bg-primary);
-  min-height: calc(100vh - 64px);
+  // Use flex-grow to take remaining space
+  flex: 1;
+  overflow: auto;
+  /* Scrollable content area */
   position: relative;
-  overflow-x: auto;
+  /* Fix horizontal overflow */
+  display: flex;
+  /* Allow children to flex */
+  flex-direction: column;
 }
 
 .main-content::before {
@@ -36,15 +49,14 @@
   .sidenav {
     width: 260px;
   }
-  
+
   .main-content {
-    padding: 20px;
+    padding: 0;
   }
 }
 
 @media (max-width: 480px) {
   .main-content {
-    padding: 16px;
+    padding: 0;
   }
 }
-

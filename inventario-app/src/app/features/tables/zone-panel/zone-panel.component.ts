@@ -14,8 +14,8 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { Zone, ZoneStats } from '../../../models';
-import { ZoneService } from '../../../core/services';
+import { Zone, ZoneStats } from '../../../models/supabase.types'; // Update to use Supabase types
+import { ZoneService } from '../../../core/services/zone.service'; // Update to core
 
 interface StatItem {
   key: string;
@@ -63,6 +63,8 @@ export class ZonePanelComponent implements OnInit {
     this.zones$.subscribe(zones => {
       this.filteredZones = zones;
     });
+    // Auto-seed if empty
+    this.zoneService.checkAndSeedZones();
   }
 
   private getStats(): Observable<StatItem[]> {
@@ -90,7 +92,8 @@ export class ZonePanelComponent implements OnInit {
     return key;
   }
 
-  getZoneTypeIcon(type: string): string {
+  getZoneTypeIcon(type: string | undefined): string {
+    if (!type) return 'help';
     const icons: { [key: string]: string } = {
       'indoor': 'home',
       'outdoor': 'park',
@@ -101,7 +104,8 @@ export class ZonePanelComponent implements OnInit {
     return icons[type] || 'help';
   }
 
-  getZoneTypeText(type: string): string {
+  getZoneTypeText(type: string | undefined): string {
+    if (!type) return 'Desconocido';
     const texts: { [key: string]: string } = {
       'indoor': 'Interior',
       'outdoor': 'Exterior',
@@ -113,7 +117,7 @@ export class ZonePanelComponent implements OnInit {
   }
 
   getTableCountByStatus(zone: Zone, status: string): number {
-    return zone.tables.filter(table => table.status === status).length;
+    return (zone.tables || []).filter(table => table.status === status).length;
   }
 
   toggleView(): void {
@@ -152,34 +156,29 @@ export class ZonePanelComponent implements OnInit {
   toggleZoneStatus(zone: Zone): void {
     this.zoneService.updateZone(zone.id, {
       id: zone.id,
-      isActive: !zone.isActive
-    }).subscribe({
-      next: () => {
-        this.refreshZones();
-        this.snackBar.open(
-          `Zona ${zone.name} ${zone.isActive ? 'desactivada' : 'activada'}`,
-          'Cerrar',
-          { duration: 3000 }
-        );
-      },
-      error: (error) => {
-        console.error('Error updating zone:', error);
-        this.snackBar.open('Error al actualizar la zona', 'Cerrar', { duration: 3000 });
-      }
+      active: !zone.active
+    }).then(() => {
+      this.refreshZones();
+      this.snackBar.open(
+        `Zona ${zone.name} ${zone.active ? 'desactivada' : 'activada'}`,
+        'Cerrar',
+        { duration: 3000 }
+      );
+    }).catch(error => {
+
+      console.error('Error updating zone:', error);
+      this.snackBar.open('Error al actualizar la zona', 'Cerrar', { duration: 3000 });
     });
   }
 
   deleteZone(zone: Zone): void {
     if (confirm(`¿Eliminar la zona "${zone.name}"? Esta acción no se puede deshacer.`)) {
-      this.zoneService.deleteZone(zone.id).subscribe({
-        next: () => {
-          this.refreshZones();
-          this.snackBar.open(`Zona "${zone.name}" eliminada`, 'Cerrar', { duration: 3000 });
-        },
-        error: (error) => {
-          console.error('Error deleting zone:', error);
-          this.snackBar.open('Error al eliminar la zona', 'Cerrar', { duration: 3000 });
-        }
+      this.zoneService.deleteZone(zone.id).then(() => {
+        this.refreshZones();
+        this.snackBar.open(`Zona "${zone.name}" eliminada`, 'Cerrar', { duration: 3000 });
+      }).catch(error => {
+        console.error('Error deleting zone:', error);
+        this.snackBar.open('Error al eliminar la zona', 'Cerrar', { duration: 3000 });
       });
     }
   }

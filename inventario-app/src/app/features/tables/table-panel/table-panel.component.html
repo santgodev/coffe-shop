@@ -9,7 +9,7 @@
         </h1>
         <p class="panel-subtitle">Administra las mesas y reservas de tu café</p>
       </div>
-      
+
       <div class="stats-section">
         <div class="stat-card" *ngFor="let stat of (stats$ | async)">
           <div class="stat-icon" [class]="getStatIconClass(stat.key)">
@@ -24,17 +24,12 @@
     </div>
 
     <div class="actions-section">
-      <button mat-raised-button 
-              color="primary" 
-              (click)="openTableDialog()"
-              class="action-button">
+      <button mat-raised-button color="primary" (click)="openTableDialog()" class="action-button">
         <mat-icon>add</mat-icon>
         Nueva Mesa
       </button>
-      
-      <button mat-stroked-button 
-              (click)="toggleView()"
-              class="view-toggle">
+
+      <button mat-stroked-button (click)="toggleView()" class="view-toggle">
         <mat-icon>{{ isGridView ? 'view_list' : 'grid_view' }}</mat-icon>
         {{ isGridView ? 'Vista Lista' : 'Vista Grilla' }}
       </button>
@@ -50,7 +45,7 @@
             <mat-label>Filtrar por estado</mat-label>
             <mat-select [(ngModel)]="selectedStatus" (selectionChange)="filterTables()">
               <mat-option value="">Todos los estados</mat-option>
-              <mat-option value="available">Disponibles</mat-option>
+              <mat-option value="free">Disponibles</mat-option>
               <mat-option value="occupied">Ocupadas</mat-option>
               <mat-option value="reserved">Reservadas</mat-option>
               <mat-option value="maintenance">Mantenimiento</mat-option>
@@ -58,13 +53,12 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="filter-field">
-            <mat-label>Filtrar por ubicación</mat-label>
-            <mat-select [(ngModel)]="selectedLocation" (selectionChange)="filterTables()">
-              <mat-option value="">Todas las ubicaciones</mat-option>
-              <mat-option value="indoor">Interior</mat-option>
-              <mat-option value="outdoor">Exterior</mat-option>
-              <mat-option value="terrace">Terraza</mat-option>
-              <mat-option value="private">Privada</mat-option>
+            <mat-label>Filtrar por Zona</mat-label>
+            <mat-select [(ngModel)]="selectedZoneId" (selectionChange)="filterTables()">
+              <mat-option value="">Todas las zonas</mat-option>
+              <mat-option *ngFor="let zone of (zones$ | async)" [value]="zone.id">
+                {{ zone.name }}
+              </mat-option>
             </mat-select>
           </mat-form-field>
 
@@ -81,28 +75,19 @@
   <div class="tables-section">
     <!-- Vista de Grilla -->
     <div class="tables-grid" *ngIf="isGridView">
-      <div class="table-card" 
-           *ngFor="let table of filteredTables" 
-           [class]="'table-' + table.status"
-           (click)="openTableDialog(table)">
-        <div class="table-header">
-          <div class="table-number">{{ table.number }}</div>
-          <div class="table-status" [class]="'status-' + table.status">
-            <mat-icon>{{ getStatusIcon(table.status) }}</mat-icon>
-            <span>{{ getStatusText(table.status) }}</span>
-          </div>
-        </div>
+      <mat-card *ngFor="let table of filteredTables" class="table-card" [class]="'status-' + table.status"
+        (click)="table.status === 'free' ? openTable(table) : null">
+        <mat-card-header>
+          <mat-icon mat-card-avatar [fontIcon]="getStatusIcon(table.status)"></mat-icon>
+          <mat-card-title>Mesa {{ table.number }}</mat-card-title>
+          <mat-card-subtitle>{{ getStatusText(table.status) }}</mat-card-subtitle>
+        </mat-card-header>
 
-        <div class="table-content">
-          <h3 class="table-name">{{ table.name }}</h3>
+        <mat-card-content>
           <div class="table-info">
             <div class="info-item">
               <mat-icon>people</mat-icon>
               <span>{{ table.capacity }} personas</span>
-            </div>
-            <div class="info-item">
-              <mat-icon>location_on</mat-icon>
-              <span>{{ getLocationText(table.location) }}</span>
             </div>
           </div>
 
@@ -129,33 +114,24 @@
               <p class="reservation-time">{{ table.reservation.startTime }} - {{ table.reservation.endTime }}</p>
             </div>
           </div>
-        </div>
+        </mat-card-content>
 
-        <div class="table-actions">
-          <button mat-icon-button 
-                  (click)="openTable(table)" 
-                  *ngIf="table.status === 'available'"
-                  matTooltip="Abrir Mesa"
-                  class="action-btn open">
+        <mat-card-actions class="table-actions">
+          <button mat-icon-button (click)="openTable(table)" *ngIf="table.status === 'free'" matTooltip="Abrir Mesa"
+            class="action-btn open">
             <mat-icon>play_arrow</mat-icon>
           </button>
-          
-          <button mat-icon-button 
-                  (click)="closeTable(table)" 
-                  *ngIf="table.status === 'occupied'"
-                  matTooltip="Cerrar Mesa"
-                  class="action-btn close">
+
+          <button mat-icon-button (click)="closeTable(table)" *ngIf="table.status === 'occupied'"
+            matTooltip="Cerrar Mesa" class="action-btn close">
             <mat-icon>stop</mat-icon>
           </button>
-          
-          <button mat-icon-button 
-                  (click)="editTable(table)" 
-                  matTooltip="Editar Mesa"
-                  class="action-btn edit">
+
+          <button mat-icon-button (click)="editTable(table)" matTooltip="Editar Mesa" class="action-btn edit">
             <mat-icon>edit</mat-icon>
           </button>
-        </div>
-      </div>
+        </mat-card-actions>
+      </mat-card>
     </div>
 
     <!-- Vista de Lista -->
@@ -166,38 +142,30 @@
             <div class="list-column">Mesa</div>
             <div class="list-column">Estado</div>
             <div class="list-column">Capacidad</div>
-            <div class="list-column">Ubicación</div>
             <div class="list-column">Cliente</div>
             <div class="list-column">Acciones</div>
           </div>
-          
+
           <div class="list-row" *ngFor="let table of filteredTables">
             <div class="list-cell">
               <div class="table-number">{{ table.number }}</div>
-              <div class="table-name">{{ table.name }}</div>
+              <div class="table-name">Mesa {{ table.number }}</div>
             </div>
-            
+
             <div class="list-cell">
               <div class="table-status" [class]="'status-' + table.status">
                 <mat-icon>{{ getStatusIcon(table.status) }}</mat-icon>
                 <span>{{ getStatusText(table.status) }}</span>
               </div>
             </div>
-            
+
             <div class="list-cell">
               <div class="capacity-info">
                 <mat-icon>people</mat-icon>
                 <span>{{ table.capacity }}</span>
               </div>
             </div>
-            
-            <div class="list-cell">
-              <div class="location-info">
-                <mat-icon>location_on</mat-icon>
-                <span>{{ getLocationText(table.location) }}</span>
-              </div>
-            </div>
-            
+
             <div class="list-cell">
               <div class="customer-info" *ngIf="table.currentOrder">
                 <p class="customer-name">{{ table.currentOrder.customerName }}</p>
@@ -209,29 +177,20 @@
               </div>
               <span class="no-customer" *ngIf="!table.currentOrder && !table.reservation">-</span>
             </div>
-            
+
             <div class="list-cell">
               <div class="action-buttons">
-                <button mat-icon-button 
-                        (click)="openTable(table)" 
-                        *ngIf="table.status === 'available'"
-                        matTooltip="Abrir Mesa"
-                        class="action-btn open">
+                <button mat-icon-button (click)="openTable(table)" *ngIf="table.status === 'free'"
+                  matTooltip="Abrir Mesa" class="action-btn open">
                   <mat-icon>play_arrow</mat-icon>
                 </button>
-                
-                <button mat-icon-button 
-                        (click)="closeTable(table)" 
-                        *ngIf="table.status === 'occupied'"
-                        matTooltip="Cerrar Mesa"
-                        class="action-btn close">
+
+                <button mat-icon-button (click)="closeTable(table)" *ngIf="table.status === 'occupied'"
+                  matTooltip="Cerrar Mesa" class="action-btn close">
                   <mat-icon>stop</mat-icon>
                 </button>
-                
-                <button mat-icon-button 
-                        (click)="editTable(table)" 
-                        matTooltip="Editar Mesa"
-                        class="action-btn edit">
+
+                <button mat-icon-button (click)="editTable(table)" matTooltip="Editar Mesa" class="action-btn edit">
                   <mat-icon>edit</mat-icon>
                 </button>
               </div>

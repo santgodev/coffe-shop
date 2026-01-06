@@ -5,36 +5,26 @@
         <mat-icon class="login-icon">inventory</mat-icon>
         Sistema de Inventario
       </mat-card-title>
-      <mat-card-subtitle>Iniciar Sesión</mat-card-subtitle>
+      <mat-card-subtitle>{{ isRegisterMode ? 'Crear Cuenta' : 'Iniciar Sesión' }}</mat-card-subtitle>
     </mat-card-header>
 
     <mat-card-content>
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Usuario</mat-label>
-          <input matInput 
-                 formControlName="username" 
-                 placeholder="Ingrese su usuario"
-                 autocomplete="username">
+          <mat-label>{{ isRegisterMode ? 'Email' : 'Usuario/Email' }}</mat-label>
+          <input matInput formControlName="username"
+            [placeholder]="isRegisterMode ? 'correo@ejemplo.com' : 'Ingrese su usuario'" autocomplete="username">
           <mat-icon matSuffix>person</mat-icon>
           <mat-error *ngIf="loginForm.get('username')?.hasError('required')">
-            El usuario es requerido
+            Requerido
           </mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Contraseña</mat-label>
-          <input matInput 
-                 [type]="hidePassword ? 'password' : 'text'"
-                 formControlName="password" 
-                 placeholder="Ingrese su contraseña"
-                 autocomplete="current-password">
-          <button mat-icon-button 
-                  matSuffix 
-                  type="button"
-                  (click)="hidePassword = !hidePassword"
-                  [attr.aria-label]="'Hide password'"
-                  [attr.aria-pressed]="hidePassword">
+          <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password"
+            placeholder="Ingrese su contraseña" autocomplete="current-password">
+          <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword">
             <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
           </button>
           <mat-error *ngIf="loginForm.get('password')?.hasError('required')">
@@ -43,17 +33,19 @@
         </mat-form-field>
 
         <div class="form-actions">
-          <button mat-raised-button 
-                  color="primary" 
-                  type="submit"
-                  [disabled]="loginForm.invalid || isLoading"
-                  class="login-button">
+          <button mat-raised-button color="primary" type="submit" [disabled]="loginForm.invalid || isLoading"
+            class="login-button">
             <mat-icon *ngIf="isLoading">hourglass_empty</mat-icon>
-            <span>{{ isLoading ? 'Iniciando...' : 'Iniciar Sesión' }}</span>
+            <span>{{ isLoading ? (isRegisterMode ? 'Registrando...' : 'Iniciando...') : (isRegisterMode ? 'Registrarse'
+              : 'Iniciar Sesión') }}</span>
+          </button>
+
+          <button mat-button type="button" (click)="toggleMode()" class="toggle-btn">
+            {{ isRegisterMode ? '¿Ya tienes cuenta? Inicia Sesión' : '¿No tienes cuenta? Regístrate' }}
           </button>
         </div>
 
-        <div class="demo-credentials" *ngIf="!isLoading">
+        <div class="demo-credentials" *ngIf="!isLoading && !isRegisterMode">
           <mat-divider></mat-divider>
           <p class="demo-title">Credenciales de demostración:</p>
           <div class="demo-users">

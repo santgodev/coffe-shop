@@ -13,8 +13,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialogModule } from '@angular/material/dialog';
 import { Observable, combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { Table, TableStats } from '../../../models';
-import { TableService } from '../../../core/services';
+import { Table, Zone } from '../../../models/supabase.types';
+import { TableService, ZoneService } from '../../../core/services';
 import { TableDialogComponent } from '../table-dialog/table-dialog.component';
 
 interface StatItem {
@@ -44,17 +44,21 @@ interface StatItem {
 export class TablePanelComponent implements OnInit {
   tables$: Observable<Table[]>;
   stats$: Observable<StatItem[]>;
+  zones$: Observable<Zone[]>; // Add zones observable
   filteredTables: Table[] = [];
   isGridView = true;
   selectedStatus = '';
-  selectedLocation = '';
+  selectedZoneId = ''; // Add selectedZoneId
 
   constructor(
     private tableService: TableService,
+    private zoneService: ZoneService, // Inject Service
     private dialog: MatDialog,
     private snackBar: MatSnackBar
   ) {
-    this.tables$ = this.tableService.getTables();
+    this.tables$ = this.tableService.tables$;
+    this.zones$ = this.zoneService.zones$; // Get zones
+    this.tableService.loadTables();
     this.stats$ = this.getStats();
   }
 
@@ -65,13 +69,22 @@ export class TablePanelComponent implements OnInit {
   }
 
   private getStats(): Observable<StatItem[]> {
-    return this.tableService.getTableStats().pipe(
-      map(stats => [
-        { key: 'available', label: 'Disponibles', value: stats.availableTables },
-        { key: 'occupied', label: 'Ocupadas', value: stats.occupiedTables },
-        { key: 'reserved', label: 'Reservadas', value: stats.reservedTables },
-        { key: 'maintenance', label: 'Mantenimiento', value: stats.maintenanceTables }
-      ])
+    return this.tables$.pipe(
+      map(tables => {
+        const total = tables.length;
+        const available = tables.filter(t => t.status === 'free').length;
+        const occupied = tables.filter(t => t.status === 'occupied').length;
+        // const reserved = tables.filter(t => t.status === 'reserved').length; // reserved not in TableStatus enum yet?
+        // const maintenance = tables.filter(t => t.status === 'maintenance').length;
+
+        return [
+          { key: 'available', label: 'Disponibles', value: available },
+          { key: 'occupied', label: 'Ocupadas', value: occupied },
+          // Placeholder for others as enum might correspond differntly
+          { key: 'reserved', label: 'Reservadas', value: 0 },
+          { key: 'maintenance', label: 'Mantenimiento', value: 0 }
+        ];
+      })
     );
   }
 
@@ -91,17 +104,17 @@ export class TablePanelComponent implements OnInit {
 
   getStatusIcon(status: string): string {
     const icons: { [key: string]: string } = {
-      'available': 'check_circle',
+      'free': 'check_circle',
       'occupied': 'restaurant',
-      'reserved': 'event',
-      'maintenance': 'build'
+      'waiting': 'event',
+      'paying': 'attach_money'
     };
     return icons[status] || 'help';
   }
 
   getStatusText(status: string): string {
     const texts: { [key: string]: string } = {
-      'available': 'Disponible',
+      'free': 'Disponible',
       'occupied': 'Ocupada',
       'reserved': 'Reservada',
       'maintenance': 'Mantenimiento'
@@ -109,15 +122,7 @@ export class TablePanelComponent implements OnInit {
     return texts[status] || 'Desconocido';
   }
 
-  getLocationText(location: string): string {
-    const texts: { [key: string]: string } = {
-      'indoor': 'Interior',
-      'outdoor': 'Exterior',
-      'terrace': 'Terraza',
-      'private': 'Privada'
-    };
-    return texts[location] || 'Desconocida';
-  }
+  // getLocationText removed as 'location' is no longer on Table interface
 
   toggleView(): void {
     this.isGridView = !this.isGridView;
@@ -127,15 +132,15 @@ export class TablePanelComponent implements OnInit {
     this.tables$.subscribe(tables => {
       this.filteredTables = tables.filter(table => {
         const matchesStatus = !this.selectedStatus || table.status === this.selectedStatus;
-        const matchesLocation = !this.selectedLocation || table.location === this.selectedLocation;
-        return matchesStatus && matchesLocation;
+        const matchesZone = !this.selectedZoneId || table.zone_id === this.selectedZoneId;
+        return matchesStatus && matchesZone;
       });
     });
   }
 
   clearFilters(): void {
     this.selectedStatus = '';
-    this.selectedLocation = '';
+    this.selectedZoneId = '';
     this.filterTables();
   }
 
@@ -159,32 +164,25 @@ export class TablePanelComponent implements OnInit {
   }
 
   openTable(table: Table): void {
-    const customerName = prompt('Nombre del cliente:');
-    if (customerName) {
-      this.tableService.openTable(table.id, customerName).subscribe({
-        next: () => {
-          this.refreshTables();
-          this.snackBar.open(`Mesa ${table.number} abierta para ${customerName}`, 'Cerrar', { duration: 3000 });
-        },
-        error: (error) => {
-          console.error('Error opening table:', error);
-          this.snackBar.open('Error al abrir la mesa', 'Cerrar', { duration: 3000 });
-        }
-      });
-    }
+    // Automatically open without prompt as requested
+    // const defaultName = 'Cliente'; // Removed, service handles user ID now
+    this.tableService.openTable(table.id).then(() => {
+      this.refreshTables();
+      this.snackBar.open(`Mesa ${table.number} abierta`, 'Cerrar', { duration: 2000 });
+    }).catch((error: any) => {
+      console.error('Error opening table:', error);
+      this.snackBar.open(`Error: ${error.message || error.details || JSON.stringify(error)}`, 'Cerrar', { duration: 5000 });
+    });
   }
 
   closeTable(table: Table): void {
     if (confirm(`¿Cerrar la mesa ${table.number}?`)) {
-      this.tableService.closeTable(table.id).subscribe({
-        next: () => {
-          this.refreshTables();
-          this.snackBar.open(`Mesa ${table.number} cerrada`, 'Cerrar', { duration: 3000 });
-        },
-        error: (error) => {
-          console.error('Error closing table:', error);
-          this.snackBar.open('Error al cerrar la mesa', 'Cerrar', { duration: 3000 });
-        }
+      this.tableService.closeTable(table.id).then(() => {
+        this.refreshTables();
+        this.snackBar.open(`Mesa ${table.number} cerrada`, 'Cerrar', { duration: 3000 });
+      }).catch((error: any) => {
+        console.error('Error closing table:', error);
+        this.snackBar.open('Error al cerrar la mesa', 'Cerrar', { duration: 3000 });
       });
     }
   }

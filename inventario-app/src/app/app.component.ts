@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { SupabaseService } from './core/services/supabase.service';
 
 @Component({
   selector: 'app-root',
@@ -9,4 +10,15 @@ import { RouterOutlet } from '@angular/router';
 })
 export class AppComponent {
   title = 'inventario-app';
+
+  constructor(private supabaseService: SupabaseService) {
+    console.log('Supabase Client Initialized');
+    this.supabaseService.client.auth.getSession().then(({ data, error }) => {
+      if (error) {
+        console.error('Error connecting to Supabase:', error);
+      } else {
+        console.log('Connection successful! Session:', data);
+      }
+    });
+  }
 }

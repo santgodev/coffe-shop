@@ -7,11 +7,11 @@
           <mat-icon>{{ getStatusIcon(table.status) }}</mat-icon>
         </div>
         <div class="table-title">
-          <h2>{{ table.name }}</h2>
-          <p>Mesa {{ table.number }} • {{ table.capacity }} personas</p>
+          <h2>Mesa {{ table.number }}</h2>
+          <p>Capacidad: {{ table.capacity }} personas</p>
         </div>
       </div>
-      
+
       <div class="header-actions">
         <button mat-icon-button (click)="closePanel()" class="close-btn">
           <mat-icon>close</mat-icon>
@@ -34,56 +34,41 @@
               <mat-icon>{{ getStatusIcon(table.status) }}</mat-icon>
               <span>{{ getStatusText(table.status) }}</span>
             </div>
-            
-            <div class="status-actions" *ngIf="table.status === 'available'">
-              <button mat-raised-button 
-                      color="primary" 
-                      (click)="openTable()"
-                      class="action-button">
+
+            <div class="status-actions" *ngIf="table.status === 'free'">
+              <button mat-raised-button color="primary" (click)="openTable()" class="action-button">
                 <mat-icon>restaurant</mat-icon>
                 Abrir Mesa
               </button>
             </div>
-            
+
             <div class="status-actions" *ngIf="table.status === 'occupied'">
-              <button mat-raised-button 
-                      color="accent" 
-                      (click)="closeTable()"
-                      class="action-button">
+              <button mat-raised-button color="accent" (click)="closeTable()" class="action-button">
                 <mat-icon>close</mat-icon>
                 Cerrar Mesa
               </button>
-              <button mat-stroked-button 
-                      (click)="viewOrder()"
-                      class="action-button">
+              <button mat-stroked-button (click)="viewOrder()" class="action-button">
                 <mat-icon>receipt</mat-icon>
                 Ver Pedido
               </button>
             </div>
-            
-            <div class="status-actions" *ngIf="table.status === 'reserved'">
-              <button mat-raised-button 
-                      color="primary" 
-                      (click)="confirmReservation()"
-                      class="action-button">
+
+            <div class="status-actions" *ngIf="table.status === 'waiting'">
+              <button mat-raised-button color="primary" (click)="confirmReservation()" class="action-button">
                 <mat-icon>check</mat-icon>
                 Confirmar Reserva
               </button>
-              <button mat-stroked-button 
-                      (click)="viewReservation()"
-                      class="action-button">
+              <button mat-stroked-button (click)="viewReservation()" class="action-button">
                 <mat-icon>event</mat-icon>
                 Ver Reserva
               </button>
             </div>
-            
-            <div class="status-actions" *ngIf="table.status === 'maintenance'">
-              <button mat-raised-button 
-                      color="primary" 
-                      (click)="completeMaintenance()"
-                      class="action-button">
-                <mat-icon>build</mat-icon>
-                Completar Mantenimiento
+
+            <div class="status-actions" *ngIf="table.status === 'paying'">
+              <!-- Paying Logic -->
+              <button mat-raised-button color="warn" (click)="closeTable()" class="action-button">
+                <mat-icon>payments</mat-icon>
+                Confirmar Pago
               </button>
             </div>
           </div>
@@ -106,7 +91,7 @@
                 <span>{{ table.number }}</span>
               </div>
             </div>
-            
+
             <div class="info-item">
               <mat-icon>people</mat-icon>
               <div class="info-content">
@@ -114,15 +99,7 @@
                 <span>{{ table.capacity }} personas</span>
               </div>
             </div>
-            
-            <div class="info-item">
-              <mat-icon>location_on</mat-icon>
-              <div class="info-content">
-                <label>Ubicación</label>
-                <span>{{ getLocationText(table.location) }}</span>
-              </div>
-            </div>
-            
+
             <div class="info-item">
               <mat-icon>category</mat-icon>
               <div class="info-content">
@@ -147,17 +124,17 @@
               <mat-icon>edit</mat-icon>
               Editar Mesa
             </button>
-            
+
             <button mat-stroked-button (click)="reserveTable()" class="action-btn">
               <mat-icon>event</mat-icon>
               Reservar
             </button>
-            
+
             <button mat-stroked-button (click)="setMaintenance()" class="action-btn">
               <mat-icon>build</mat-icon>
               Mantenimiento
             </button>
-            
+
             <button mat-stroked-button (click)="deleteTable()" class="action-btn delete">
               <mat-icon>delete</mat-icon>
               Eliminar
