@@ -51,10 +51,40 @@ export class ZoneService {
       .subscribe();
   }
 
-  async updateZone(id: string, updates: Partial<Zone>) {
+  async createZone(zone: Partial<Zone>): Promise<Zone> {
+    // Remove fields that might not exist in DB schema yet
+    const payload = { ...zone };
+    delete payload.capacity;
+    delete payload.floor;
+    delete payload.type;
+    delete payload.tables; // Never send joined data
+
     const { data, error } = await this.supabase.client
       .from('zones')
-      .update(updates)
+      .insert(payload)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating zone:', error);
+      throw error;
+    }
+
+    const current = this._zones.value;
+    this._zones.next([...current, data as Zone]);
+    return data;
+  }
+
+  async updateZone(id: string, updates: Partial<Zone>) {
+    const payload = { ...updates };
+    delete payload.capacity;
+    delete payload.floor;
+    delete payload.type;
+    delete payload.tables;
+
+    const { data, error } = await this.supabase.client
+      .from('zones')
+      .update(payload)
       .eq('id', id)
       .select()
       .single();
@@ -151,10 +181,10 @@ export class ZoneService {
 
         if (minError) {
           console.error('Minimal seed also failed:', minError);
-          alert(`Error creating zones: ${minError.message || minError.details || JSON.stringify(minError)}`);
+          console.error(`Error creating zones: ${minError.message || minError.details || JSON.stringify(minError)}`);
         } else {
           console.log('Minimal zones seeded successfully.');
-          alert('Zones created with limited data. Your database schema may need updates (missing columns like "type" or "capacity").');
+          console.warn('Zones created with limited data. Your database schema may need updates (missing columns like "type" or "capacity").');
           this.loadZones();
         }
       } else {

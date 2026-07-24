@@ -8,6 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../../core/services';
 
 @Component({
@@ -23,7 +24,8 @@ import { AuthService } from '../../../core/services';
     MatInputModule,
     MatButtonModule,
     MatIconModule,
-    MatDividerModule
+    MatDividerModule,
+    MatSnackBarModule
   ]
 })
 export class LoginComponent implements OnInit {
@@ -40,7 +42,8 @@ export class LoginComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private snackBar: MatSnackBar
   ) {
     this.loginForm = this.fb.group({
       username: ['', [Validators.required]],
@@ -69,18 +72,17 @@ export class LoginComponent implements OnInit {
       if (this.isRegisterMode) {
         this.authService.signUp(username, password).subscribe({
           next: (response: any) => {
-            this.isLoading = false;
             if (response.error) {
-              alert('Error al registrarse: ' + response.error.message);
+              this.snackBar.open('Error al registrarse: ' + response.error.message, 'Cerrar', { duration: 5000 });
             } else {
-              alert('Registro exitoso. Por favor revisa tu correo para confirmar (si está habilitado) o inicia sesión.');
+              this.snackBar.open('Registro exitoso. Por favor revisa tu correo o inicia sesión.', 'OK', { duration: 5000 });
               this.isRegisterMode = false; // Switch back to login
             }
           },
           error: (err) => {
             this.isLoading = false;
             console.error(err);
-            alert('Error en el registro');
+            this.snackBar.open('Error en el registro', 'Cerrar', { duration: 4000 });
           }
         });
       } else {
@@ -88,7 +90,7 @@ export class LoginComponent implements OnInit {
           next: (response: any) => {
             this.isLoading = false;
             if (response.error) {
-              alert('Error de login: ' + response.error.message);
+              this.snackBar.open('Error de login: ' + response.error.message, 'Cerrar', { duration: 5000 });
             } else {
               this.router.navigate(['/dashboard']);
             }
@@ -96,7 +98,7 @@ export class LoginComponent implements OnInit {
           error: (error: any) => {
             this.isLoading = false;
             console.error('Error de login:', error);
-            alert('Credenciales inválidas o error de conexión.');
+            this.snackBar.open('Credenciales inválidas o error de conexión.', 'Cerrar', { duration: 4000 });
           }
         });
       }

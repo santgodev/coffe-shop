@@ -3,13 +3,13 @@
     <div class="kds-header">
         <div class="brand">
             <mat-icon>restaurant_menu</mat-icon>
-            <h1>KITCHEN DISPLAY</h1>
+            <h1>Tablero de Cocina</h1>
         </div>
 
         <div class="station-filter">
             <mat-chip-listbox aria-label="Station Selection" [value]="selectedStationId"
                 (change)="onStationChange($event)">
-                <mat-chip-option value="all" selected color="accent">👁️ Todos</mat-chip-option>
+                <mat-chip-option value="all" selected color="accent">Todos</mat-chip-option>
                 <mat-chip-option *ngFor="let station of stations$ | async" [value]="station.id" color="primary">
                     {{ station.name }}
                 </mat-chip-option>

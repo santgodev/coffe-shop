@@ -113,7 +113,6 @@ export class CashService {
         return data as CashTransaction[];
     }
 
-    // Calculate totals: Base + Sales (Cash) + Incomes - Expenses
     async getShiftSummary(shiftId: string): Promise<{
         base: number;
         totalSalesCash: number;
@@ -135,24 +134,25 @@ export class CashService {
             .reduce((acc, t) => acc + t.amount, 0);
 
         // 2. Sales (Cash Only)
-        // We assume 'orders' table has 'status' = 'paid' (or we check 'payments' table if it exists, assuming orders for now)
+
         // Query orders paid AFTER shift opened
+        // We calculate total from order_items since 'orders' doesn't have total_amount
         const { data: salesData, error } = await this.supabase.client
-            .from('orders') // Assuming orders has total_amount and status
-            .select('total_amount, payment_method') // Add payment_method if it exists
+            .from('orders')
+            .select('id, status, updated_at, order_items ( quantity, unit_price )')
             .eq('status', 'paid')
-            .gte('updated_at', shift.opened_at); // simplistic time check
+            .gte('updated_at', shift.opened_at);
 
         if (error) {
-            console.error('Error fetching sales for shift:', error);
+            console.error('[CashService] Error fetching sales:', error);
         }
 
-        // TODO: Filter only Cash sales if payment_method exists. 
-        // For now assuming all paid orders count or we filter in memory if field exists.
-        // Let's assume we sum all for now, or refine if user confirms schema.
-
         const totalSalesCash = (salesData || [])
-            .reduce((acc: number, order: any) => acc + (order.total_amount || 0), 0);
+            .reduce((acc: number, order: any) => {
+                const orderTotal = (order.order_items || [])
+                    .reduce((itemAcc: number, item: any) => itemAcc + (item.quantity * item.unit_price), 0);
+                return acc + orderTotal;
+            }, 0);
 
         const base = shift.base_amount || 0;
         const expectedTotal = base + totalSalesCash + totalIncomes - totalExpenses;

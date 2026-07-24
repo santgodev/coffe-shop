@@ -111,8 +111,40 @@ export class TableService {
   }
 
   async freeTable(tableId: string, sessionId?: string) {
+    // 0. If sessionId not provided, try to find it from the table
+    if (!sessionId) {
+      const { data: tableData } = await this.supabase.client
+        .from('tables')
+        .select('current_session_id')
+        .eq('id', tableId)
+        .single();
+
+      if (tableData?.current_session_id) {
+        sessionId = tableData.current_session_id;
+        console.log('[TableService] Resolved missing sessionId:', sessionId);
+      }
+    }
+
     // 1. Close Session if exists
     if (sessionId) {
+      // NEW: Link to Cash Register - Mark all non-cancelled orders in this session as 'paid'
+      const { data: updatedIds, error: orderError } = await this.supabase.client
+        .from('orders')
+        .update({
+          status: 'paid',
+          updated_at: new Date().toISOString()
+        })
+        .eq('session_id', sessionId)
+        .neq('status', 'cancelled')
+        .select('id'); // Select to count updated rows
+
+      if (orderError) {
+        console.error('Error marking orders as paid during table closure:', orderError);
+      } else {
+        const count = updatedIds?.length || 0;
+        console.log(`[TableService] Marked ${count} orders as paid for session ${sessionId}`);
+      }
+
       await this.supabase.client
         .from('table_sessions')
         .update({
@@ -224,5 +256,18 @@ export class TableService {
     const start = new Date(startTime).getTime();
     const now = new Date().getTime();
     return now - start;
+  }
+  async getTableById(id: string): Promise<Table | null> {
+    const { data, error } = await this.supabase.client
+      .from('tables')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching table by ID:', error);
+      return null;
+    }
+    return data as Table;
   }
 }

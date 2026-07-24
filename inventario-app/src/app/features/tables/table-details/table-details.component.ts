@@ -5,8 +5,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Table } from '../../../models/supabase.types';
+import { Table, Order } from '../../../models/supabase.types';
 import { TableService } from '../../../core/services/table.service';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-table-details',
@@ -156,15 +157,28 @@ export class TableDetailsComponent implements OnInit {
   async deleteTable(): Promise<void> {
     if (!this.table) return;
 
-    if (confirm(`¿Eliminar la mesa ${this.table.number}?`)) {
-      try {
-        await this.tableService.deleteTable(this.table.id);
-        this.snackBar.open(`Mesa eliminada`, 'Cerrar', { duration: 3000 });
-        this.closePanel();
-      } catch (error) {
-        console.error(error);
-        this.snackBar.open('Error al eliminar', 'Cerrar', { duration: 3000 });
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: `Eliminar Mesa ${this.table.number} `,
+        message: '¿Estás seguro de eliminar esta mesa? Esta acción no se puede deshacer.',
+        confirmText: 'Eliminar',
+        icon: 'delete',
+        type: 'danger'
       }
-    }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.tableService.deleteTable(this.table!.id).then(() => {
+          this.snackBar.open(`Mesa ${this.table!.number} eliminada`, 'Cerrar', { duration: 3000 });
+          this.close.emit(); // Close details
+          // Parent component should handle refresh/removal from list
+        }).catch(err => {
+          console.error('Error deleting table:', err);
+          this.snackBar.open('Error al eliminar mesa', 'Cerrar', { duration: 3000 });
+        });
+      }
+    });
   }
 }

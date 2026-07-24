@@ -1,13 +1,14 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { CashService } from '../../../../core/services/cash.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
     selector: 'app-cash-closure-dialog',
@@ -110,6 +111,7 @@ export class CashClosureDialogComponent implements OnInit {
         private authService: AuthService,
         public dialogRef: MatDialogRef<CashClosureDialogComponent>, // Public for template access
         private snackBar: MatSnackBar,
+        private dialog: MatDialog, // Inject MatDialog service
         @Inject(MAT_DIALOG_DATA) public data: { summary: any, shiftId: string }
     ) {
         this.form = this.fb.group({
@@ -135,31 +137,44 @@ export class CashClosureDialogComponent implements OnInit {
     async onCloseShift() {
         if (this.form.invalid) return;
 
-        if (!confirm('¿Estás seguro de cerrar la caja? Esta acción no se puede deshacer.')) return;
+        const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+            width: '400px',
+            data: {
+                title: 'Cerrar Caja',
+                message: '¿Estás seguro de cerrar la caja? Esta acción no se puede deshacer.',
+                confirmText: 'Cerrar Caja',
+                icon: 'point_of_sale',
+                type: 'warning'
+            }
+        });
 
-        this.isLoading = true;
-        try {
-            const user = await this.authService.getCurrentUser();
-            if (!user) throw new Error('No user');
+        dialogRef.afterClosed().subscribe(async result => {
+            if (!result) return;
 
-            await this.cashService.closeShift(
-                this.data.shiftId,
-                {
-                    expected: this.data.summary.expectedTotal,
-                    real: this.form.value.realAmount,
-                    notes: this.form.value.notes,
-                    closedBy: user.id
-                }
-            );
+            this.isLoading = true;
+            try {
+                const user = await this.authService.getCurrentUser();
+                if (!user) throw new Error('No user');
 
-            this.snackBar.open('Caja cerrada correctamente', 'Ok', { duration: 3000 });
-            this.dialogRef.close(true);
+                await this.cashService.closeShift(
+                    this.data.shiftId,
+                    {
+                        expected: this.data.summary.expectedTotal,
+                        real: this.form.value.realAmount,
+                        notes: this.form.value.notes,
+                        closedBy: user.id
+                    }
+                );
 
-        } catch (e) {
-            console.error(e);
-            this.snackBar.open('Error al cerrar caja', 'Cerrar');
-        } finally {
-            this.isLoading = false;
-        }
+                this.snackBar.open('Caja cerrada correctamente', 'Ok', { duration: 3000 });
+                this.dialogRef.close(true);
+
+            } catch (e) {
+                console.error(e);
+                this.snackBar.open('Error al cerrar caja', 'Cerrar');
+            } finally {
+                this.isLoading = false;
+            }
+        });
     }
 }

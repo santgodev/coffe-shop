@@ -1,7 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { KitchenService } from '../../../../core/services/kitchen.service';
-import { Order } from '../../../../models/supabase.types';
+import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { Order, OrderItem } from '../../../../models/supabase.types';
 import { Subscription, interval } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,6 +14,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormsModule } from '@angular/forms';
 import { StationService } from '../../../../core/services/station.service';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 @Component({
     selector: 'app-kitchen-board',
@@ -28,7 +31,9 @@ import { StationService } from '../../../../core/services/station.service';
         MatFormFieldModule,
         MatSelectModule,
         MatTooltipModule,
-        FormsModule
+        FormsModule,
+        MatDialogModule,
+        MatSnackBarModule
     ],
     templateUrl: './kitchen-board.component.html',
     styleUrls: ['./kitchen-board.component.scss']
@@ -44,7 +49,9 @@ export class KitchenBoardComponent implements OnInit, OnDestroy {
 
     constructor(
         private kitchenService: KitchenService,
-        private stationService: StationService
+        private stationService: StationService,
+        private dialog: MatDialog,
+        private snackBar: MatSnackBar
     ) {
         this.stations$ = this.stationService.stations$;
     }
@@ -185,8 +192,6 @@ export class KitchenBoardComponent implements OnInit, OnDestroy {
 
     // --- Actions ---
 
-    // --- Actions ---
-
     async toggleItemStatus(item: any) {
         // Prevent toggling if it's not my station (unless I'm viewing all, then allowed as admin/overlord)
         if (!this.isItemForCurrentStation(item) && this.selectedStationId !== 'all') return;
@@ -221,9 +226,27 @@ export class KitchenBoardComponent implements OnInit, OnDestroy {
     }
 
     async clearAll() {
-        if (confirm('¿Seguro que quieres borrar todos los pedidos en pantalla?')) {
-            await this.kitchenService.archiveAllOrders();
-        }
+        // Clear Local View Only (or add backend service method if supported)
+        // There is no standard "Delete All" in OrderService usually, so this might be clearing specific state
+        // Checking previous implementation: this.orders = [];
+
+        const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+            width: '400px',
+            data: {
+                title: 'Borrar todo',
+                message: '¿Seguro que quieres borrar todos los pedidos en pantalla? (Solo vista local)',
+                confirmText: 'Borrar',
+                icon: 'delete_sweep',
+                type: 'danger'
+            }
+        });
+
+        dialogRef.afterClosed().subscribe(result => {
+            if (result) {
+                this.orders = [];
+                this.snackBar.open('Pantalla limpia', 'OK', { duration: 2000 });
+            }
+        });
     }
 
     getOrderProgress(order: any): number {

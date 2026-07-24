@@ -99,6 +99,20 @@ export class ClientCartService {
         this.saveToStorage();
     }
 
+    updateNote(index: number, note: string) {
+        const tableId = this._tableId.value;
+        if (!tableId) return;
+
+        const current = this._cartsByTable[tableId];
+        if (!current) return;
+
+        current[index].notes = note;
+
+        this._cartsByTable[tableId] = [...current];
+        this._cart.next(this._cartsByTable[tableId]);
+        this.saveToStorage();
+    }
+
     clearCart() {
         const tableId = this._tableId.value;
         if (!tableId) return;

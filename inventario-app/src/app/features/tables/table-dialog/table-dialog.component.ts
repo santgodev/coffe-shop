@@ -11,6 +11,11 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Table } from '../../../models/supabase.types';
 import { TableService } from '../../../core/services';
 
+export interface TableDialogData {
+  table?: Table;
+  zoneId?: string;
+}
+
 @Component({
   selector: 'app-table-dialog',
   templateUrl: './table-dialog.component.html',
@@ -37,14 +42,14 @@ export class TableDialogComponent implements OnInit {
     private fb: FormBuilder,
     private tableService: TableService,
     private dialogRef: MatDialogRef<TableDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: Table | null
+    @Inject(MAT_DIALOG_DATA) public data: TableDialogData
   ) {
-    this.isEdit = !!data;
+    this.isEdit = !!data.table;
     this.tableForm = this.createForm();
   }
 
   ngOnInit(): void {
-    if (this.isEdit && this.data) {
+    if (this.isEdit && this.data.table) {
       this.populateForm();
     }
   }
@@ -53,23 +58,21 @@ export class TableDialogComponent implements OnInit {
     return this.fb.group({
       number: ['', [Validators.required]],
       capacity: [4, [Validators.required, Validators.min(1), Validators.max(20)]],
-      status: ['free']
+      status: ['free'],
+      shape: ['square'] // Added shape support
     });
   }
 
   private populateForm(): void {
-    if (this.data) {
+    if (this.data.table) {
       this.tableForm.patchValue({
-        number: this.data.number,
-        capacity: this.data.capacity,
-        status: this.data.status
+        number: this.data.table.number,
+        capacity: this.data.table.capacity,
+        status: this.data.table.status,
+        shape: this.data.table.shape
       });
     }
   }
-
-  // Removed getStatusIcon, getStatusText, getLocationText as they are likely UI helpers not needed for logic 
-  // or can be simplified if used in template. Leaving them if template uses them implies keeping them but fixing types.
-  // Assuming template uses them.
 
   getStatusIcon(status: string): string {
     const icons: { [key: string]: string } = {
@@ -96,16 +99,15 @@ export class TableDialogComponent implements OnInit {
       this.isLoading = true;
       const formValue = this.tableForm.value;
 
-      const tableData: Partial<Table> = {
-        number: formValue.number,
-        capacity: formValue.capacity,
-        status: formValue.status
-        // zone_id should be passed contextually! Missing here. Assuming update preserves it?
-        // For create, we are missing zone_id. This dialog needs zoneId input if creating.
-      };
+      // Default position for new tables
+      const newPos = { x_position: 100, y_position: 100 };
 
-      if (this.isEdit && this.data) {
-        this.tableService.updateTable(this.data.id, tableData).then(() => {
+      if (this.isEdit && this.data.table) {
+        const updateData: Partial<Table> = {
+          ...formValue
+        };
+
+        this.tableService.updateTable(this.data.table.id, updateData).then(() => {
           this.isLoading = false;
           this.dialogRef.close(true);
         }).catch(error => {
@@ -113,14 +115,20 @@ export class TableDialogComponent implements OnInit {
           this.isLoading = false;
         });
       } else {
-        // Create requires zone_id. If missing, it will fail at DB level or Service.
-        // We will assume for now we just try to create. 
-        // This component might be broken for Create if zone_id is not handled.
+        // Create Mode
+        if (!this.data.zoneId) {
+          console.error('Zone ID required for creation');
+          this.isLoading = false;
+          return;
+        }
 
-        // Mocking zone_id or hoping it's optional? it's not. 
-        // We really need to pass zone_id to this dialog for creation.
-        // For now, let's fix the build syntax.
-        this.tableService.createTable(tableData as any).then(() => {
+        const createData: Partial<Table> = {
+          ...formValue,
+          zone_id: this.data.zoneId,
+          ...newPos
+        };
+
+        this.tableService.createTable(createData as any).then(() => {
           this.isLoading = false;
           this.dialogRef.close(true);
         }).catch(error => {

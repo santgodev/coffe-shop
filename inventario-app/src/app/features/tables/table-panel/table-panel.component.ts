@@ -16,6 +16,7 @@ import { map } from 'rxjs/operators';
 import { Table, Zone } from '../../../models/supabase.types';
 import { TableService, ZoneService } from '../../../core/services';
 import { TableDialogComponent } from '../table-dialog/table-dialog.component';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 interface StatItem {
   key: string;
@@ -176,15 +177,28 @@ export class TablePanelComponent implements OnInit {
   }
 
   closeTable(table: Table): void {
-    if (confirm(`¿Cerrar la mesa ${table.number}?`)) {
-      this.tableService.closeTable(table.id).then(() => {
-        this.refreshTables();
-        this.snackBar.open(`Mesa ${table.number} cerrada`, 'Cerrar', { duration: 3000 });
-      }).catch((error: any) => {
-        console.error('Error closing table:', error);
-        this.snackBar.open('Error al cerrar la mesa', 'Cerrar', { duration: 3000 });
-      });
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: `Cerrar mesa ${table.number}`,
+        message: '¿Estás seguro de cerrar esta mesa?',
+        confirmText: 'Cerrar Mesa',
+        icon: 'lock',
+        type: 'warning'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.tableService.closeTable(table.id).then(() => {
+          this.refreshTables();
+          this.snackBar.open(`Mesa ${table.number} cerrada`, 'Cerrar', { duration: 3000 });
+        }).catch((error: any) => {
+          console.error('Error closing table:', error);
+          this.snackBar.open('Error al cerrar la mesa', 'Cerrar', { duration: 3000 });
+        });
+      }
+    });
   }
 
   editTable(table: Table): void {

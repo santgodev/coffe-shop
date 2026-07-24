@@ -27,6 +27,8 @@ import { TableDetailsComponent } from '../table-details/table-details.component'
 import { TableActionMenuComponent } from '../table-action-menu/table-action-menu.component';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { QrDisplayDialogComponent } from '../../../shared/components/qr-display-dialog/qr-display-dialog.component';
+import { TableBillPreviewDialogComponent } from '../table-dialog/table-bill-preview-dialog/table-bill-preview-dialog.component';
+import { TableDialogComponent } from '../table-dialog/table-dialog.component';
 
 @Component({
   selector: 'app-table-board',
@@ -80,6 +82,16 @@ export class TableBoardComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
+    // 1. Subscribe to params to handle navigation changes
+    this.subscriptions.push(
+      this.route.paramMap.subscribe(params => {
+        const zoneId = params.get('zoneId');
+        if (zoneId) {
+          this.attemptSelectZone(zoneId);
+        }
+      })
+    );
+
     this.loadZones();
     this.loadTables();
     this.startTimers();
@@ -93,11 +105,25 @@ export class TableBoardComponent implements OnInit, OnDestroy {
   private loadZones(): void {
     this.zoneService.getZones().subscribe(zones => {
       this.zones = zones;
-      // Select first zone or restore from URL/Storage if needed
-      if (zones.length > 0 && !this.selectedZone) {
+
+      // Try resolving zone from URL first
+      const zoneId = this.route.snapshot.paramMap.get('zoneId');
+      if (zoneId) {
+        this.attemptSelectZone(zoneId);
+      } else if (zones.length > 0 && !this.selectedZone) {
+        // Fallback to first zone
         this.selectZone(zones[0]);
       }
     });
+  }
+
+  private attemptSelectZone(zoneId: string): void {
+    if (this.zones.length === 0) return; // Wait for zones to load
+
+    const zone = this.zones.find(z => z.id === zoneId);
+    if (zone) {
+      this.selectZone(zone);
+    }
   }
 
   selectZone(zone: Zone): void {
@@ -171,22 +197,29 @@ export class TableBoardComponent implements OnInit, OnDestroy {
     this.showGrid = !this.showGrid;
   }
 
-  addTable(capacity: number = 4, shape: string = 'square'): void {
-    if (!this.selectedZone) return;
+  openCreateTableDialog(): void {
+    if (!this.selectedZone) {
+      this.snackBar.open('Selecciona una zona primero', 'Cerrar', { duration: 2000 });
+      return;
+    }
 
-    this.tableService.createTable({
-      zone_id: this.selectedZone.id.toString(), // Ensure string if needed, or number depending on model
-      number: (this.tables.length + 1).toString(),
-      capacity: capacity,
-      status: 'free',
-      shape: shape,
-      x_position: 100 + (this.tables.length * 20),
-      y_position: 100 + (this.tables.length * 20),
-    }).then(table => {
-      this.tables.push(table);
-      this.selectedTable = table;
-      this.snackBar.open(`Mesa para ${capacity} creada`, 'OK', { duration: 2000 });
+    const dialogRef = this.dialog.open(TableDialogComponent, {
+      width: '400px',
+      data: { zoneId: this.selectedZone.id }, // Pass zoneId for creation
+      disableClose: true
     });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.snackBar.open('Mesa creada correctamente', 'OK', { duration: 2000 });
+        // Table list updates automatically via subscription
+      }
+    });
+  }
+
+  // Kept for backward compatibility or quick-add if needed (optional)
+  addTable(capacity: number = 4, shape: string = 'square'): void {
+    this.openCreateTableDialog();
   }
 
   selectTable(table: Table): void {
@@ -212,7 +245,17 @@ export class TableBoardComponent implements OnInit, OnDestroy {
   }
 
   editTable(table: Table): void {
-    this.selectedTable = table;
+    const dialogRef = this.dialog.open(TableDialogComponent, {
+      width: '400px',
+      data: { table: table },
+      disableClose: true
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.snackBar.open('Mesa actualizada', 'OK', { duration: 2000 });
+      }
+    });
   }
 
   deleteTable(table: Table): void {
@@ -288,19 +331,14 @@ export class TableBoardComponent implements OnInit, OnDestroy {
             this.router.navigate(['/client/menu', table.id]);
             break;
           case 'close':
-            const confirmCloseRef = this.dialog.open(ConfirmDialogComponent, {
-              width: '400px',
-              data: {
-                title: `Cerrar Mesa ${table.number}`,
-                message: 'Esto finalizará la sesión y liberará la mesa. ¿Estás seguro?',
-                confirmText: 'Cerrar Mesa',
-                type: 'warning',
-                icon: 'lock_person'
-              }
+            const billPreviewRef = this.dialog.open(TableBillPreviewDialogComponent, {
+              width: '450px',
+              panelClass: 'bill-preview-dialog',
+              data: { table }
             });
 
-            confirmCloseRef.afterClosed().subscribe(res => {
-              if (res) {
+            billPreviewRef.afterClosed().subscribe(confirmed => {
+              if (confirmed) {
                 this.tableService.closeTable(table.id)
                   .then(() => this.snackBar.open(`Mesa ${table.number} Cerrada`, 'OK', { duration: 3000 }))
                   .catch(err => this.snackBar.open('Error al cerrar mesa', 'Cerrar'));

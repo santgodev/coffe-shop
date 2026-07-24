@@ -8,6 +8,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'; // Ensure imported if used or remove
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { FormsModule } from '@angular/forms';
 import { Table, Order } from '../../../../models/supabase.types';
 import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
 
@@ -20,6 +23,10 @@ import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
         MatButtonModule,
         MatIconModule,
         MatSnackBarModule,
+        MatProgressSpinnerModule,
+        MatFormFieldModule,
+        MatInputModule,
+        FormsModule,
         TranslatePipe
     ],
     template: `
@@ -33,8 +40,8 @@ import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
         <div class="empty-icon-circle">
             <mat-icon>restaurant_menu</mat-icon>
         </div>
-        <p>{{ 'EMPTY_CART_MSG' | translate }}</p>
-        <button class="btn-primary-ghost" (click)="goBack()">{{ 'VIEW_MENU' | translate }}</button>
+        <p>Tu carrito está vacío</p>
+        <button class="btn-primary-ghost" (click)="goBack()">Ver Menú</button>
       </div>
 
       <div class="cart-content" *ngIf="cart.length > 0 || confirmedItems.length > 0">
@@ -79,6 +86,16 @@ import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
                         <span class="qty-val">{{ item.quantity }}</span>
                         <button (click)="increase(i)" class="qty-btn plus"><mat-icon>add</mat-icon></button>
                     </div>
+                </div>
+                
+                <!-- Note Input -->
+                <div class="item-notes">
+                    <mat-form-field appearance="outline" class="note-field" subscriptSizing="dynamic">
+                        <mat-icon matPrefix>edit_note</mat-icon>
+                        <input matInput placeholder="Notas (ej. Sin cebolla)" 
+                               [ngModel]="item.notes" 
+                               (ngModelChange)="updateItemNote(i, $event)">
+                    </mat-form-field>
                 </div>
             </div>
         </div>
@@ -215,6 +232,20 @@ import { TranslatePipe } from '../../../../core/pipes/translate.pipe';
     .qty-btn:active { background: #eee; }
     .qty-val { margin: 0 16px; font-weight: 700; min-width: 20px; text-align: center; }
 
+    .item-notes {
+        padding: 0 12px 0;
+    }
+    .note-field {
+        width: 100%;
+        font-size: 0.9rem;
+    }
+    .note-field ::ng-deep .mat-mdc-form-field-wrapper {
+        padding-bottom: 0;
+    }
+    .note-field ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+        display: none;
+    }
+
     /* FOOTER */
     .sticky-footer {
         position: fixed;
@@ -300,6 +331,10 @@ export class ClientCartComponent implements OnInit {
         private snackBar: MatSnackBar
     ) { }
 
+    updateItemNote(index: number, note: string) {
+        this.cartService.updateNote(index, note);
+    }
+
     ngOnInit() {
         // 1. Check URL Params for Table ID (Priority)
         this.route.paramMap.subscribe(params => {
@@ -307,7 +342,8 @@ export class ClientCartComponent implements OnInit {
             if (id) {
                 this.tableId = id;
                 this.cartService.setTableId(id); // Sync service
-                this.loadConfirmedItems(id);
+                // DO NOT Load confirmed items (User request: only show new order)
+                // this.loadConfirmedItems(id);
             }
         });
 
@@ -315,7 +351,7 @@ export class ClientCartComponent implements OnInit {
         this.cartService.tableId$.subscribe(id => {
             if (id && !this.tableId) {
                 this.tableId = id;
-                this.loadConfirmedItems(id);
+                // DO NOT Load confirmed items
             }
         });
 
@@ -326,6 +362,7 @@ export class ClientCartComponent implements OnInit {
     }
 
     async loadConfirmedItems(tableId: string) {
+        // Keep method for potential future toggle, but don't call it automatically
         this.confirmedItems = await this.orderService.getActiveOrderItems(tableId);
         this.calculateTotals();
     }
@@ -370,8 +407,10 @@ export class ClientCartComponent implements OnInit {
 
             this.cartService.clearCart();
             this.snackBar.open('¡Pedido enviado a cocina!', 'Ok', { duration: 4000 });
-            // Reload confirmed items to show what we just sent
-            await this.loadConfirmedItems(this.tableId);
+
+            // Redirect to Menu instead of showing empty cart or history
+            this.router.navigate(['/client/menu', this.tableId]);
+
         } catch (error) {
             console.error(error);
             this.snackBar.open('Error al enviar pedido', 'Cerrar');

@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatRippleModule } from '@angular/material/core';
 import { ClientCartService, CartItem } from '../../../core/services';
 import { TranslationService, Language } from '../../../core/services/translation.service';
+import { TableService } from '../../../core/services/table.service';
 
 @Component({
   selector: 'app-client-layout',
@@ -34,9 +35,9 @@ import { TranslationService, Language } from '../../../core/services/translation
                 <span>{{ currentLang.toUpperCase() }}</span>
             </div>
 
-            <!-- Table Info (Optional) -->
-            <div class="table-badge" *ngIf="tableId">
-                <span>Mesa {{ tableId.substring(0,2) }}</span>
+            <!-- Table Info -->
+            <div class="table-badge" *ngIf="tableName">
+                <span>{{ tableName }}</span>
             </div>
 
             <!-- Cart Trigger -->
@@ -164,17 +165,24 @@ import { TranslationService, Language } from '../../../core/services/translation
 export class ClientLayoutComponent {
   cartCount = 0;
   tableId: string | null = null;
+  tableName: string | null = null;
   currentLang: Language = 'es';
 
   constructor(
     private cartService: ClientCartService,
     private router: Router,
-    private translation: TranslationService
+    private translation: TranslationService,
+    private tableService: TableService
   ) {
     this.cartService.cart$.subscribe((cart: CartItem[]) => {
       this.cartCount = cart.reduce((acc: number, item: CartItem) => acc + item.quantity, 0);
     });
-    this.cartService.tableId$.subscribe(id => this.tableId = id);
+    this.cartService.tableId$.subscribe(id => {
+      this.tableId = id;
+      if (id) {
+        this.loadTableInfo(id);
+      }
+    });
     this.translation.currentLang$.subscribe(lang => this.currentLang = lang);
   }
 
@@ -189,5 +197,12 @@ export class ClientLayoutComponent {
     } else {
       this.router.navigate(['/client/cart']);
     }
+  }
+  loadTableInfo(id: string) {
+    this.tableService.getTableById(id).then((table: any) => {
+      if (table) {
+        this.tableName = `Mesa ${table.number}`;
+      }
+    }).catch((err: any) => console.error('Error loading table info', err));
   }
 }

@@ -39,5 +39,9 @@ export const routes: Routes = [
       { path: '', redirectTo: 'menu', pathMatch: 'full' }
     ]
   },
+  {
+    path: 'pricing',
+    loadComponent: () => import('./features/landing/pricing-calculator/pricing-calculator.component').then(m => m.PricingCalculatorComponent)
+  },
   { path: '**', redirectTo: '/tables' }
 ];
